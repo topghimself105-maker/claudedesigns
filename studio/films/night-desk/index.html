@@ -25,6 +25,12 @@ function counters(t){return [
   Math.floor(482913*Math.pow(clamp((t+0.4)/20.6,0,1),0.85)),
   rampN(t,3,10,5961), rampN(t,8.5,15.5,214), rampN(t,14.5,19.8,9), t>=TFILL?1:0];}
 const fmt=n=>n.toLocaleString('en-US');
+const clockSec=t=>(1*3600+40*60+Math.floor(Math.max(0,t)*160))%86400;
+const hmm=m=>String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+// sessions in New York time. London and NY get 3 x 90 min cycles starting at the killzone open; Asia has none.
+const SES=[['LDN',120,'London'],['NY',420,'New York']];
+function sesInfo(t){const mins=Math.floor(clockSec(t)/60);for(const [k,open,nm] of SES){const since=mins-open;if(since>=0&&since<270)return{ses:k,nm,mins,open,since,cyc:Math.floor(since/90)+1};}
+  return{ses:mins>=1200||mins<0?'ASIA':'--',nm:'',mins,open:120,since:0,cyc:0};}
 const clockStr=t=>{const s=(1*3600+40*60+Math.floor(Math.max(0,t)*160))%86400;return [Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(v=>String(v).padStart(2,'0')).join(':');};
 
 // ---- ring geometry ----
@@ -33,7 +39,7 @@ const rot=t=>ROT*(t/D);
 const NQ=r=>fmt(21330+Math.floor(r*230)), ES=r=>fmt(5990+Math.floor(r*60)), YM=r=>fmt(43120+Math.floor(r*240));
 const TYPES=[r=>`NQ sweep ${NQ(r)}`,r=>`NQ fvg ${NQ(r)}`,r=>'NQ mss confirm',r=>`NQ ote 0.${['618','705','790'][Math.floor(r*3)]}`,r=>`NQ pdh ${NQ(r)}`,r=>`NQ pdl ${NQ(r)}`,r=>`NQ pwh ${NQ(r)}`,
  r=>`NQ asia hi ${NQ(r)}`,r=>`NQ asia lo ${NQ(r)}`,r=>`NQ ldn lo ${NQ(r)}`,r=>'NQ 00:00 open',r=>'NQ 08:30 open',r=>'NQ 09:30 open',
- r=>`ES smt LL ${ES(r)}`,r=>`YM smt LL ${YM(r)}`,r=>`NQ smt HL ${NQ(r)}`,r=>'NQ discount array',r=>'NQ premium array',r=>`mmbm phase ${1+Math.floor(r*4)}`,r=>`mmsm phase ${1+Math.floor(r*4)}`,
+ r=>`ES smt HL ${ES(r)}`,r=>`YM smt HL ${YM(r)}`,r=>`NQ smt LL ${NQ(r)}`,r=>'NQ discount array',r=>'NQ premium array',r=>`mmbm phase ${1+Math.floor(r*4)}`,r=>`mmsm phase ${1+Math.floor(r*4)}`,
  r=>'htf bias d1 bull',r=>'htf bias 1h bull',r=>'killzone LDN',r=>'killzone NY am',r=>`ssl pool ${NQ(r)}`,r=>`bsl pool ${NQ(r)}`,r=>`pd fvg ${NQ(r)}`,r=>`ES sweep ${ES(r)}`,r=>'time liq sess hi',r=>'time liq sess lo'];
 const labelAt=(slot,t,col)=>{const b=slot%24,tick=mod(Math.floor(t*2.5+b*0.37+col*0.5),65);const k=Math.floor(R(b*3+col,tick)*TYPES.length);return TYPES[k](R(b+col*50,tick+100));};
 
@@ -129,7 +135,7 @@ function scene(t){
     ctx.shadowBlur=0;ctx.globalAlpha=pul;ctx.fillStyle=gr;ctx.fillRect(x1-40,y1-40,80,80);ctx.globalAlpha=1;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x1,y1,3.2,0,TAU);ctx.fill();
     // stop / target rails appear after the fill
     if(t>=TFILL){const f=sst(TFILL,TFILL+0.6,t);ctx.globalAlpha=f;ctx.lineWidth=1;ctx.setLineDash([5,5]);
-      [[-0.01,'rgba(236,235,242,0.8)','ENTRY 21,406'],[0.115,K.acc,'SL 21,368'],[-0.215,K.lav,'TP 21,520  3R']].forEach(([da,c,lb])=>{const aa=w+da,x2=CX+Math.cos(aa)*560,y2=CY+Math.sin(aa)*560,x3=CX+Math.cos(aa)*1000,y3=CY+Math.sin(aa)*1000;ctx.strokeStyle=c;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x3,y3);ctx.stroke();ctx.setLineDash([]);tx(lb,x3-4,y3-6,9,c,'right',700);ctx.setLineDash([5,5]);});
+      [[-0.01,'rgba(236,235,242,0.8)','ENTRY 21,406'],[0.115,K.acc,'SL 21,368'],[-0.215,K.lav,'TP 21,520  3R']].forEach(([da,c,lb])=>{const aa=w+da,x2=CX+Math.cos(aa)*560,y2=CY+Math.sin(aa)*560,x3=CX+Math.cos(aa)*1000,y3=CY+Math.sin(aa)*1000;ctx.strokeStyle=c;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x3,y3);ctx.stroke();ctx.setLineDash([]);tx(lb,x3+8,y3+3,9,c,'left',700);ctx.setLineDash([5,5]);});
       ctx.setLineDash([]);ctx.globalAlpha=1;}
   }
   ctx.restore();
@@ -138,18 +144,48 @@ function callouts(t){
   const w=winner(),u=1-Math.exp(-Math.max(0,t-TC)*1.55),rr=548+u*430,[px,py]=cam(t,CX+Math.cos(w)*rr,CY+Math.sin(w)*rr);
   const box=(x,y,w2,h,lines,al)=>{ctx.globalAlpha=al;ctx.fillStyle='rgba(8,8,12,0.92)';ctx.fillRect(x,y,w2,h);ctx.strokeStyle=K.acc;ctx.lineWidth=1.2;ctx.strokeRect(x+.5,y+.5,w2-1,h-1);
     lines.forEach((l,i)=>tx(l[0],x+12,y+22+i*17,l[1]||10.5,l[2]||K.w,'left',l[3]||400));ctx.globalAlpha=1;};
-  if(t>=TC+0.25){const a=sst(TC+0.25,TC+0.7,t)*(1-sst(25,25.8,t));const bw=360,bx=clamp(px-bw-26,380,W-bw-24),by=clamp(py-132,SY0+8,SY1-210);
+  if(t>=TC+0.25){const a=sst(TC+0.25,TC+0.7,t)*(1-sst(25,25.8,t));const bw=360,bx=clamp(px-bw-26,380,W-bw-24),by=clamp(py-55,410,SY1-250);
     ctx.globalAlpha=a;ctx.strokeStyle=K.acc;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(bx+bw,by+60);ctx.lineTo(px-6,py);ctx.stroke();ctx.globalAlpha=1;
-    box(bx,by,bw,112,[['SIGNAL — 1 OF 5,961',12,K.acc,700],['NQ LONG',11,K.w,700],['LDN killzone · sweep + MSS + FVG',10,K.g1],['SMT: ES, YM make LL · NQ holds HL',10,K.g1],['BOT EXECUTES',10.5,K.acc,700]],a);}
-  if(t>=TFILL){const a=sst(TFILL,TFILL+0.5,t)*(1-sst(25,25.8,t));const bw=360,bx=clamp(px-bw-26,380,W-bw-24),by=clamp(py-132,SY0+8,SY1-210)+122;
-    box(bx,by,bw,92,[[`ORDER FILLED  ${clockStr(TFILL)}`,11.5,K.acc,700],['NQ LONG @ 21,406  market on MSS',10,K.w],['SL 21,368 (beyond sweep)  TP 21,520 (3R)',10,K.g1],['placed automatically',10,K.g1]],a);}
+    box(bx,by,bw,112,[['SIGNAL — 1 OF 5,961',12,K.acc,700],['NQ LONG · 6 / 6 FRANK369',11,K.w,700],['LDN C1/3 · sweep + MSS + FVG',10,K.g1],['SMT: NQ LL · ES, YM hold HL',10,K.g1],['BOT EXECUTES',10.5,K.acc,700]],a);}
+  if(t>=TFILL){const a=sst(TFILL,TFILL+0.5,t)*(1-sst(25,25.8,t));const bw=360,bx=clamp(px-bw-26,380,W-bw-24),by=clamp(py-55,410,SY1-250)+122;
+    box(bx,by,bw,92,[[`ORDER FILLED  ${clockStr(TFILL)}`,11.5,K.acc,700],['NQ LONG @ 21,406 · 6 MNQ · market on MSS',10,K.w],['SL 21,368 (beyond sweep) · TP 21,520 · RR 3.00',10,K.g1],['risk $456 · placed automatically',10,K.g1]],a);}
 }
-function formula(t){const hot=sst(TLOCK1,TC,t)*(1-sst(24,25.5,t));const x=W-30,y=SY0+22;ctx.fillStyle='rgba(6,6,8,0.82)';ctx.fillRect(W-292,SY0+6,284,62);ctx.strokeStyle=K.line;ctx.strokeRect(W-291.5,SY0+6.5,283,61);
-  [['risk   = equity × 0.5% / SL'],['size   = risk / (entry − stop)'],['target = entry + 3 × (entry − stop)']].forEach((l,i)=>tx(l[0],x,y+i*15,10,hot>0.5&&i<2?K.acc:K.g1,'right'));
-  tx(`SL 38 pts → R = 3.0`,x,y+46,9,K.g2,'right');}
+// ---- FRANK369 / COMPUTE: live calculations over the simulated chart (values mirror the callout) ----
+const CS=[8.2,9.9,11.6,13.3,15.0,16.7],CDONE=CS.map(v=>v+1.7);
+const CHK=t=>{const si=sesInfo(t),inS=si.ses==='LDN'||si.ses==='NY';return[
+ {a:inS?`TIME  m = t − open = ${hmm(si.mins)} − ${hmm(si.open)} = ${si.since} min · cycle = ⌊m/90⌋+1 = ${si.cyc} of 3 · ${si.nm}`:`TIME  t = ${hmm(si.mins)} · before London open 02:00 · waiting`,
+  b:'      LDN c1 02:00-03:30 · c2 03:30-05:00 · c3 05:00-06:30 · Asia has none',ok:inS},
+ {a:'BIAS  D1 close 21,448 > EQ (21,520+21,290)/2 = 21,405 → +1',b:'      1H close 21,414 > EQ (21,431+21,382)/2 = 21,406.5 → +1 · Σ +2 → LONG',ok:true},
+ {a:'LIQ   SSL (Asia low) = 21,380 · low 21,371 < 21,380 → raid 9 pts',b:'      close 21,386 > 21,380 → reclaimed',ok:true},
+ {a:'MMXM  consolidation 21,380-21,431 ✓ · raid SSL ✓ · reversal close 21,406 > 21,397 ✓',b:'      phases = 3 / 3 → buy model · target = PDH 21,520',ok:true},
+ {a:'PD    EQ = (21,371+21,520)/2 = 21,445.5 · entry 21,406 < EQ → discount',b:'      position = (21,406−21,371)/(21,520−21,371) = 35/149 = 23.5%',ok:true},
+ {a:'SMT   NQ 21,371 < 21,380 LL · ES 6,007.50 > 6,004.25 HL · YM 43,215 > 43,190 HL',b:'      NQ LL, ES HL, YM HL → bullish SMT 2 / 2',ok:true}];};
+const RISK=['size = (100,000 × 0.5%) / (21,406 − 21,368) = 500 / 38 = 13.16 $/pt → 6.58 → 6 MNQ ($2/pt)','RR   = (21,520 − 21,406) / (21,406 − 21,368) = 114 / 38 = 3.00   · risk 6 × 38 × $2 = $456'];
+// 3-6-9 stand out: any numeric token equal to 3, 6 or 9 is drawn in the accent colour
+function mathTx(str,x,y,col,sz,wt){ctx.font=`${wt||400} ${sz}px ${MONO}`;ctx.textAlign='left';ctx.textBaseline='alphabetic';let cx=x;
+  str.split(/(\d[\d,]*\.?\d*)/).forEach(seg=>{if(!seg)return;const v=parseFloat(seg.replace(/,/g,'')),hot=/^[1-9]/.test(seg)&&(v===3||v===6||v===9);
+    ctx.fillStyle=hot?K.acc:col;ctx.font=`${hot?700:(wt||400)} ${sz}px ${MONO}`;ctx.fillText(seg,cx,y);cx+=ctx.measureText(seg).width;});}
+function typed(str,p){return str.slice(0,Math.floor(str.length*p));}
+function compute(t){const X=508,Y=126,PWD=542,LH=12.4,f=sst(CS[0]-0.4,CS[0],t)*(1-sst(25,25.8,t));if(f<=0)return;
+  const chk=CHK(t);ctx.save();ctx.globalAlpha=f;
+  ctx.fillStyle='rgba(6,6,9,0.93)';ctx.fillRect(X,Y,PWD,276);ctx.strokeStyle=K.acc;ctx.lineWidth=1;ctx.globalAlpha=f*0.6;ctx.strokeRect(X+.5,Y+.5,PWD-1,275);ctx.globalAlpha=f;
+  tx('FRANK369 / COMPUTE',X+12,Y+17,10.5,K.acc,'left',700);tx(`live · ${sesInfo(t).ses} ${hmm(sesInfo(t).mins)}`,X+PWD-12,Y+17,9,K.g1,'right');
+  ctx.strokeStyle=K.line;ctx.beginPath();ctx.moveTo(X,Y+25.5);ctx.lineTo(X+PWD,Y+25.5);ctx.stroke();
+  let y=Y+42,passed=0;
+  chk.forEach((c,i)=>{const p1=clamp((t-CS[i])/1.0,0,1),p2=clamp((t-CS[i]-1.0)/0.7,0,1),done=t>=CDONE[i];if(done&&c.ok)passed++;
+    if(p1>0)mathTx(typed(c.a,p1),X+12,y,K.w,9);if(p2>0)mathTx(typed(c.b,p2),X+12,y+LH,K.g1,9);
+    if(p2>0&&p2<1){ctx.fillStyle=K.acc;ctx.fillRect(X+12+ctx.measureText(typed(c.b,p2)).width+2,y+LH-8,5,9);}
+    if(done)tx(c.ok?'✓':'✗',X+PWD-14,y+LH,12,c.ok?K.acc:'#ff5a5a','right',700);else if(p1>0)tx('…',X+PWD-14,y+LH,12,K.g2,'right');
+    y+=2*LH+5;});
+  // score
+  const sp=clamp((t-18.5)/0.6,0,1);ctx.strokeStyle=K.line;ctx.beginPath();ctx.moveTo(X+10,y-6.5);ctx.lineTo(X+PWD-10,y-6.5);ctx.stroke();
+  if(sp>0){const msg=typed(`SCORE  ${Math.min(6,passed)} / 6 Frank369 conditions met → EXECUTE`,sp);const hot=t>=19.1;ctx.shadowColor=K.acc;ctx.shadowBlur=hot?10:0;mathTx(msg,X+12,y+8,hot?K.acc:K.w,11,700);ctx.shadowBlur=0;}
+  y+=24;
+  RISK.forEach((r,i)=>{const st=19.3+i*0.6,p=clamp((t-st)/0.7,0,1);if(p>0)mathTx(typed(r,p),X+12,y+i*LH,K.g1,8.6);});
+  ctx.restore();}
 
 // ---- tabs ----
-function tabs(t){const c=counters(t),tw=(W-60)/5;tx(`NQ · SIM · NY ${clockStr(t)}`,W-30,28,10.5,K.g1,'right');
+function tabs(t){const c=counters(t),tw=(W-60)/5;{const si=sesInfo(t);tx(`NQ · SIM · NY ${clockStr(t)} · ${si.ses}${si.cyc?' C'+si.cyc+'/3':''}`,W-30,28,10.5,K.g1,'right');}
   ctx.strokeStyle=K.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(30,40);ctx.lineTo(W-30,40);ctx.stroke();
   PH.forEach((p,i)=>{const x=30+i*tw,act=t>=p[1]&&t<p[2],done=t>=p[2];
     tx(p[0]+(i<4?'  →':''),x,62,10,act?K.w:K.g2,'left');tx(fmt(c[i]),x,90,22,act?K.w:(done?K.g1:K.g2),'left',act?700:400);
@@ -178,7 +214,7 @@ function pSources(t){const r=pr(4);frameBox(r,'SOURCES / DATA ROUTES','6 FEEDS',
   rows.forEach((l,i)=>{const y=r.y+40+i*14,on=Math.sin(TAU*(t/D*3+i*0.17))>0.2;ctx.fillStyle=on?K.acc:K.g3;ctx.fillRect(r.x+10,y-6,5,5);tx(l[0],r.x+22,y,8,K.g1,'left');tx(l[1],r.x+r.w-10,y,8,K.w,'right');});}
 function pValid(t){const r=pr(5);frameBox(r,'VALIDATION / SAMPLE BUFFER','512/512',K.g2);
   for(let c=0;c<3;c++){ctx.strokeStyle=c===1?K.acc:(c?K.g1:K.w);ctx.globalAlpha=c===1?.9:.7;ctx.lineWidth=1;ctx.beginPath();const y0=r.y+52+c*30;for(let x=0;x<=r.w-20;x+=2){const ph=x/(r.w-20)*TAU*2.4+TAU*t/D*(2+c)+c*2;const v=Math.sin(ph)*(7+4*Math.sin(ph*0.37+c))+Math.sin(ph*3.1+c)*3;x?ctx.lineTo(r.x+10+x,y0+v):ctx.moveTo(r.x+10,y0+v);}ctx.stroke();}ctx.globalAlpha=1;
-  tx('checks passed',r.x+10,r.y+r.h-8,8,K.g1);tx(`${Math.min(6,Math.floor(sst(9,TC,t)*6.01))}/6`,r.x+r.w-10,r.y+r.h-8,8,t>=TC?K.acc:K.w,'right',700);}
+  tx('checks passed',r.x+10,r.y+r.h-8,8,K.g1);tx(`${CDONE.filter(v=>t>=v).length}/6`,r.x+r.w-10,r.y+r.h-8,8,t>=TC?K.acc:K.w,'right',700);}
 function pAgents(t){const r=pr(6);frameBox(r,'AGENTS / DISPATCH','4 WORKERS',K.g2);const names=['SCAN','FILTER','RISK','EXECUTE'],st=['IDLE','BUSY','DONE'];
   names.forEach((n,i)=>{const y=r.y+38+i*25;let s=Math.floor(mod(t*0.9+i*0.8,3));let col=K.g1;if(i===3){s=t>=TFILL?2:(t>=TC?1:0);col=t>=TC?K.acc:K.g2;}
     tx(n,r.x+10,y,9,col===K.acc?K.acc:K.w,'left',700);tx(st[s],r.x+r.w-10,y,8,col===K.g1?K.g1:col,'right');ctx.fillStyle=K.line;ctx.fillRect(r.x+10,y+6,r.w-20,3);const f=i===3?(t>=TFILL?1:clamp((t-TC)/1.8,0,1)):mod(t*0.35+i*0.23,1);ctx.fillStyle=i===3&&t>=TC?K.acc:K.g1;ctx.fillRect(r.x+10,y+6,(r.w-20)*f,3);});}
@@ -188,7 +224,7 @@ function pBacktest(t){const r=pr(7);frameBox(r,'STRATEGY / BACKTEST INDEX','SIM'
 
 function draw(t){
   ctx.globalAlpha=1;ctx.fillStyle=K.bg;ctx.fillRect(0,0,W,H);
-  rain(t,'back');scene(t);rain(t,'front');callouts(t);formula(t);tabs(t);
+  rain(t,'back');scene(t);rain(t,'front');callouts(t);compute(t);tabs(t);
   [pFeed,pFlow,pCode,pMarket,pSources,pValid,pAgents,pBacktest].forEach(f=>f(t));
   topLayer(t);
 }
