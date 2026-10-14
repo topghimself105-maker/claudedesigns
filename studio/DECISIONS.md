@@ -15,3 +15,13 @@
 - 4:5 master (best on the X feed) and 16:9 (YouTube); reduced-motion cut for 4:5.
 - Frank369: rules unknown to the studio, so playbooks/frank369.json is a labelled placeholder. Nothing in the film claims to be their method.
 - "Still unverified" panel is deliberately honest: news calendar, spread, HTF bias and the single-day sample are not checked.
+
+## Film 3: ship-line (explainer-film baseline, vortex look)
+- Brief: "remake this one with the baseline". Reference = the green vortex build-desk video. Owner chose: the VIDEO's look wins over the baseline's visual bans (no neon / particles); topic = automation crew shipping work; own brand, none of the reference's names, text or numbers.
+- One idea: a crew of automated roles pushes thousands of tasks through gates; most are held, and that is why what ships stays clean. Hook belief: "automation = AI writes it and it ships".
+- Turn: reviewer gate OFF -> more ships, more reverts. Payoff: gate back on, opening image read correctly, next step "add one gate to yours".
+- 4:5 master only (the reference's native frame and the X feed); 16:9 / 9:16 / 1:1 recompositions are not built yet. 30 s, 60 fps, BT.709.
+- Captions: reference has none; baseline requires them. Compromise: one large caption pill (34 px, readable at 390 px wide) plus captions.srt; HUD text stays small and decorative.
+- Flashes: ship bursts de-duplicated to at most 2.5 per second. Reduced-motion cut: fixed camera, weaker flashes, no strobing.
+- Score: clean generated bed (sub, pad, soft pulse, A-minor motif that returns on "gate back on"), UI cues only on role intros, ships, gate off/on. No strings/brass this time.
+- Disclaimer line kept at the bottom (channel is trading-adjacent) even though the topic is not trading.

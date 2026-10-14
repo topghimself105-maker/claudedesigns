@@ -1,0 +1,45 @@
+1
+00:00:00,400 --> 00:00:03,400
+Thousands of tasks.
+Few will ship.
+
+2
+00:00:03,600 --> 00:00:05,100
+Scout finds the work.
+
+3
+00:00:05,200 --> 00:00:06,700
+Planner cuts it small.
+
+4
+00:00:06,800 --> 00:00:08,300
+Builder writes the change.
+
+5
+00:00:08,400 --> 00:00:11,900
+Reviewer and tester
+are gates.
+
+6
+00:00:12,000 --> 00:00:16,000
+What passes ships
+at one point.
+
+7
+00:00:16,100 --> 00:00:21,900
+A gate holds what fails.
+
+8
+00:00:22,000 --> 00:00:26,600
+Reviewer off.
+More ships. More reverts.
+
+9
+00:00:26,700 --> 00:00:28,500
+Gate back on.
+Fewer reverts.
+
+10
+00:00:28,600 --> 00:00:30,000
+Next: add one gate
+to yours.
