@@ -1,0 +1,59 @@
+1
+00:00:00,300 --> 00:00:04,200
+One smart agent runs the whole bot.
+Who checks its work?
+
+2
+00:00:04,500 --> 00:00:07,000
+Split the job.
+One agent per question.
+
+3
+00:00:07,100 --> 00:00:09,600
+Scan finds what moved.
+
+4
+00:00:09,700 --> 00:00:12,100
+Filter drops what does not fit.
+
+5
+00:00:12,200 --> 00:00:14,200
+Risk sizes it and guards the book.
+
+6
+00:00:14,300 --> 00:00:16,200
+Execute only sends the order.
+
+7
+00:00:16,400 --> 00:00:20,800
+Five signals arrive.
+Scan hands over five tickets.
+
+8
+00:00:21,000 --> 00:00:26,000
+Filter says no to three.
+Every no is written down.
+
+9
+00:00:26,200 --> 00:00:31,000
+Risk refuses one and sizes the other.
+
+10
+00:00:31,200 --> 00:00:34,000
+One order leaves.
+Four no's on file.
+
+11
+00:00:34,200 --> 00:00:36,200
+Now change one thing:
+risk moves into execute.
+
+12
+00:00:36,400 --> 00:00:41,000
+Same signals. Two orders.
+Nobody said no.
+
+13
+00:00:41,200 --> 00:00:45,000
+One bot, four agents.
+Log every no.

@@ -1,0 +1,260 @@
+{
+ "duration": 45,
+ "fps": 60,
+ "captions": [
+  [
+   0.3,
+   4.2,
+   [
+    "One smart agent runs the whole bot.",
+    "Who checks its work?"
+   ]
+  ],
+  [
+   4.5,
+   7,
+   [
+    "Split the job.",
+    "One agent per question."
+   ]
+  ],
+  [
+   7.1,
+   9.6,
+   [
+    "Scan finds what moved."
+   ]
+  ],
+  [
+   9.7,
+   12.1,
+   [
+    "Filter drops what does not fit."
+   ]
+  ],
+  [
+   12.2,
+   14.2,
+   [
+    "Risk sizes it and guards the book."
+   ]
+  ],
+  [
+   14.3,
+   16.2,
+   [
+    "Execute only sends the order."
+   ]
+  ],
+  [
+   16.4,
+   20.8,
+   [
+    "Five signals arrive.",
+    "Scan hands over five tickets."
+   ]
+  ],
+  [
+   21,
+   26,
+   [
+    "Filter says no to three.",
+    "Every no is written down."
+   ]
+  ],
+  [
+   26.2,
+   31,
+   [
+    "Risk refuses one and sizes the other."
+   ]
+  ],
+  [
+   31.2,
+   34,
+   [
+    "One order leaves.",
+    "Four no's on file."
+   ]
+  ],
+  [
+   34.2,
+   36.2,
+   [
+    "Now change one thing:",
+    "risk moves into execute."
+   ]
+  ],
+  [
+   36.4,
+   41,
+   [
+    "Same signals. Two orders.",
+    "Nobody said no."
+   ]
+  ],
+  [
+   41.2,
+   45,
+   [
+    "One bot, four agents.",
+    "Log every no."
+   ]
+  ]
+ ],
+ "rows": [
+  {
+   "t": 22.4,
+   "slot": 0,
+   "id": "S2",
+   "agent": "Filter",
+   "decision": "No",
+   "reason": "stale price data"
+  },
+  {
+   "t": 23.6,
+   "slot": 1,
+   "id": "S4",
+   "agent": "Filter",
+   "decision": "No",
+   "reason": "spread too wide"
+  },
+  {
+   "t": 24.8,
+   "slot": 2,
+   "id": "S5",
+   "agent": "Filter",
+   "decision": "No",
+   "reason": "same trade already open"
+  },
+  {
+   "t": 27.8,
+   "slot": 3,
+   "id": "S3",
+   "agent": "Risk",
+   "decision": "No",
+   "reason": "book already long"
+  },
+  {
+   "t": 29.2,
+   "slot": 4,
+   "id": "S1",
+   "agent": "Risk",
+   "decision": "Pass",
+   "reason": "sized to the risk limit"
+  },
+  {
+   "t": 32,
+   "slot": 5,
+   "id": "S1",
+   "agent": "Execute",
+   "decision": "Pass",
+   "reason": "order sent"
+  },
+  {
+   "t": 39.5,
+   "slot": 7,
+   "id": "S3",
+   "agent": "Execute and risk",
+   "decision": "Pass",
+   "reason": "nobody checked it"
+  }
+ ],
+ "cues": {
+  "split": 4.5,
+  "reveal": [
+   7,
+   9.6,
+   12.1,
+   14.2
+  ],
+  "arrive": [
+   16.4,
+   16.9,
+   17.4,
+   17.9,
+   18.4
+  ],
+  "toFilter": 21,
+  "rejects": [
+   22.4,
+   23.6,
+   24.8,
+   27.8
+  ],
+  "passFilter": 25.3,
+  "sized": 29.2,
+  "order": 32,
+  "merge": 34.2,
+  "replayOrder": 39.5,
+  "payoff": 41.4,
+  "union": 42.4
+ },
+ "camera": [
+  [
+   0,
+   1,
+   2.5
+  ],
+  [
+   4.5,
+   1,
+   2.5
+  ],
+  [
+   7,
+   1.06,
+   1
+  ],
+  [
+   9.6,
+   1.06,
+   2
+  ],
+  [
+   12.1,
+   1.06,
+   3
+  ],
+  [
+   14.2,
+   1.06,
+   4
+  ],
+  [
+   16.4,
+   1,
+   2.5
+  ],
+  [
+   17,
+   1.06,
+   1
+  ],
+  [
+   21,
+   1.06,
+   2
+  ],
+  [
+   26,
+   1.06,
+   3
+  ],
+  [
+   31,
+   1.06,
+   4
+  ],
+  [
+   34,
+   1,
+   2.5
+  ],
+  [
+   41,
+   1,
+   2.5
+  ]
+ ]
+}

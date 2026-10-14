@@ -1,0 +1,13 @@
+# Decisions: "One bot, four agents" (crew-pipeline)
+- Brief: topic = the agent-crew idea applied to trading automation; audience = automation builders on X who believe one smart agent can run the whole bot; outcome = they can name the four jobs and say why the agent that sends an order must not judge its own risk; length 45 s. Look = the baseline look (warm neutral ground, one accent), chosen by the owner over keeping the reference's neon look.
+- Reference: the uploaded "JEV engineering" funnel video (crew of scout/planner/builder/reviewer/tester/human). Only its subject and structure are reused: roles with one question each, a gate that decides what ships, a ledger of what happened. None of its visuals, wording or metrics.
+- ./brand, ./refs and ./screens were empty, so tokens were defined fresh (tokens.json). Logged, not blocked.
+- The one question the film answers: "Why can't one smart agent run my trading bot?" The wrong belief: more intelligence in one agent is safer. The right picture: separate jobs, and the agent that sends the order never judges its own risk.
+- Cut list (kept out): strategy rules, indicators, position-sizing formulas, any performance numbers, tools and brand names. The film names no strategy and states no trading rule.
+- Names: Scan, Filter, Risk, Execute, ledger, signal. One name per thing, used every time.
+- The checks shown ("stale price data", "spread too wide", "duplicate of an open trade", "book already long") are generic hygiene examples, labelled "example checks, not a strategy" in the ledger. No ICT or Frank369 rule is used or implied.
+- Accent = the single ticket in flight. Rejection is a crossed circle plus the word "No" (colour is never the signal). The one unchecked order is hatched and labelled.
+- Formats per baseline: 16:9 master, 9:16 and 1:1 recompositions of the same timeline (nodes stack vertically in 9:16), plus a reduced-motion cut (16:9, 30 fps).
+- Sound: Web Audio, rendered offline in headless Chrome. 96 bpm (72 beats in 45 s), D-major pad bed, one four-note motif (D F# A E) at the split and again at the payoff, soft cues only on meaningful actions, a small dissonance on the unchecked order.
+- Disclaimer on every frame because the film is trading-related: "Not financial advice. For educational purposes only. Simulated data." (centred, bottom, muted on the light ground, 5.33:1 contrast).
+- Design review: done by me against the review questions (who is this for, what are we communicating, does it need a name or can it stay invisible). No separate subagent was run.

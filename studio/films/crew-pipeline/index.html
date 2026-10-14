@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>One Bot, Four Agents</title>
+<style>
+@font-face{font-family:"Instrument Serif";src:url(fonts/InstrumentSerif-Regular.ttf)}
+@font-face{font-family:"Instrument Serif";font-style:italic;src:url(fonts/InstrumentSerif-Italic.ttf)}
+@font-face{font-family:"JetBrains Mono";src:url(fonts/JetBrainsMono-Regular.ttf)}
+html,body{margin:0;background:#e8e4dc;height:100%}canvas{display:block;margin:0 auto;max-width:100vw;max-height:100vh}
+</style></head>
+<body><canvas id="c"></canvas>
+<script src="audio.js"></script>
+<script>
+// "One bot, four agents": explainer film. Every frame is a pure function of t; there is no randomness in the picture.
+// ?layout=16x9|1x1|9x16   ?reduced=1 (no camera, no travel: objects cross-fade between stations)   ?t=12 (single frame)   ?play=1 (live)
+const q=new URLSearchParams(location.search);
+const FMT=q.get('layout')||'16x9',REDUCED=q.get('reduced')==='1';
+const SIZES={'16x9':[1920,1080],'1x1':[1080,1080],'9x16':[1080,1920]};const [W,H]=SIZES[FMT];
+const cv=document.getElementById('c');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
+const K={ground:'#e8e4dc',paper:'#f5f2ec',ink:'#22211f',muted:'#5f5b53',hair:'#bcb6a9',accent:'#2f4bd8'};
+const SERIF='"Instrument Serif", serif',MONO='"JetBrains Mono", monospace';
+const DURATION=45;
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),lerp=(a,b,t)=>a+(b-a)*t,sst=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const ease=u=>{u=clamp(u,0,1);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2};          // cubic in-out: settles, no bounce
+const fade=(t,a,d=.45)=>REDUCED?(t>=a?1:0):clamp((t-a)/d,0,1);
+
+// ---- layout: one grid per format. Stations flow left to right, or top to bottom in 9:16 ----
+const L=(()=>{
+  if(FMT==='16x9'){const nw=270,nh=250,g=64,x0=324,cy=350;return{vert:false,laneY0:142,laneSp:24,nodes:[0,1,2,3].map(i=>({x:x0+i*(nw+g),y:cy-nh/2,w:nw,h:nh})),
+    inlet:{x:150,y:cy},outlet:{x:1770,y:cy},lane:28,r:11,fs:1,nameFs:46,qFs:24,ledFs:20,footFs:17,wrapQ:false,ledger:{x:324,y:520,w:1272,h:320},cap:{x:324,y:872,fs:66},foot:1052};}
+  if(FMT==='1x1'){const nw=190,nh=214,g=28,x0=118,cy=262;return{vert:false,laneY0:108,laneSp:20,nodes:[0,1,2,3].map(i=>({x:x0+i*(nw+g),y:cy-nh/2,w:nw,h:nh})),
+    inlet:{x:80,y:cy},outlet:{x:1000,y:cy},lane:24,r:9,fs:.8,nameFs:40,qFs:27,ledFs:26,footFs:22,wrapQ:true,ledger:{x:90,y:410,w:900,h:372},cap:{x:90,y:812,fs:54},foot:1052};}
+  const nw=700,nh=150,g=44,y0=330;return{vert:true,laneY0:0,laneSp:40,nodes:[0,1,2,3].map(i=>({x:190,y:y0+i*(nh+g),w:nw,h:nh})),
+    inlet:{x:540,y:200},outlet:{x:540,y:1166},lane:60,r:13,fs:1,nameFs:46,qFs:30,ledFs:27,footFs:22,wrapQ:false,ledger:{x:90,y:1262,w:900,h:388},cap:{x:90,y:1694,fs:60},foot:1884};
+})();
+const C=r=>({x:r.x+r.w/2,y:r.y+r.h/2});
+const UNION=(()=>{const a=L.nodes[0],b=L.nodes[3];return{x:a.x,y:a.y,w:b.x+b.w-a.x,h:b.y+b.h-a.y};})();
+const SLICE=i=>L.vert?{x:UNION.x,y:UNION.y+i*UNION.h/4,w:UNION.w,h:UNION.h/4}:{x:UNION.x+i*UNION.w/4,y:UNION.y,w:UNION.w/4,h:UNION.h};
+const NODE_NAMES=['Scan','Filter','Risk','Execute'],NODE_Q=['What moved?','Does it fit the rules?','How big? Is the book safe?','Send the order.'];
+const REVEAL=[7.0,9.6,12.1,14.2];
+
+// ---- timeline: every beat, move and cue lives here (also exported as window.TIMELINE) ----
+const CAPTIONS=[
+ [0.3,4.2,['One smart agent runs the whole bot.','Who checks its work?']],
+ [4.5,7.0,['Split the job.','One agent per question.']],
+ [7.1,9.6,['Scan finds what moved.']],
+ [9.7,12.1,['Filter drops what does not fit.']],
+ [12.2,14.2,['Risk sizes it and guards the book.']],
+ [14.3,16.2,['Execute only sends the order.']],
+ [16.4,20.8,['Five signals arrive.','Scan hands over five tickets.']],
+ [21.0,26.0,['Filter says no to three.','Every no is written down.']],
+ [26.2,31.0,['Risk refuses one and sizes the other.']],
+ [31.2,34.0,['One order leaves.',"Four no's on file."]],
+ [34.2,36.2,['Now change one thing:','risk moves into execute.']],
+ [36.4,41.0,['Same signals. Two orders.','Nobody said no.']],
+ [41.2,45.0,['One bot, four agents.','Log every no.']]];
+// ledger rows: [slot, time, id, agent, decision, reason]
+const ROWS=[[0,22.4,'S2','Filter','No','stale price data'],[1,23.6,'S4','Filter','No','spread too wide'],[2,24.8,'S5','Filter','No','same trade already open'],
+  [3,27.8,'S3','Risk','No','book already long'],[4,29.2,'S1','Risk','Pass','sized to the risk limit'],[5,32.0,'S1','Execute','Pass','order sent'],
+  [7,39.5,'S3','Execute and risk','Pass','nobody checked it']];
+const REPLAY_AT=34.6;
+// signals: id, lane, appears, path of [arrive0, arrive1, station], and where they end up
+const SIG=[
+ {id:'S1',lane:-2,t0:16.4,path:[[17.2,18.0,1],[21.0,21.8,2],[25.8,26.6,3],[30.6,31.4,4],[32.0,33.2,5]],end:'order'},
+ {id:'S2',lane:-1,t0:16.9,path:[[17.7,18.5,1],[21.0,21.8,2]],end:'no',row:0,go:[22.4,23.3]},
+ {id:'S3',lane:0,t0:17.4,path:[[18.2,19.0,1],[21.0,21.8,2],[25.8,26.6,3]],end:'no',row:3,go:[27.8,28.7]},
+ {id:'S4',lane:1,t0:17.9,path:[[18.7,19.5,1],[21.0,21.8,2]],end:'no',row:1,go:[23.6,24.5]},
+ {id:'S5',lane:2,t0:18.4,path:[[19.2,20.0,1],[21.0,21.8,2]],end:'no',row:2,go:[24.8,25.7]},
+ {id:'S3',lane:0,t0:36.4,path:[[36.9,37.4,1],[37.7,38.2,2],[38.5,39.1,4],[39.5,40.5,5]],end:'order',replay:true},
+ {id:'S0',lane:0,t0:0.8,path:[[1.0,1.6,'big'],[2.8,3.6,5]],end:'order0',single:true}];
+// camera: [time, zoom, focus station (fractional = between stations)]; transitions take 0.8 s and begin at the key time
+const CAMK=[[0,1,2.5],[4.5,1,2.5],[7.0,1.06,1],[9.6,1.06,2],[12.1,1.06,3],[14.2,1.06,4],[16.4,1,2.5],[17.0,1.06,1],[21.0,1.06,2],[26.0,1.06,3],[31.0,1.06,4],[34.0,1,2.5],[41.0,1,2.5]];
+
+// ---- state at time t ----
+const merged=t=>sst(34.2,35.9,t)*(1-sst(41.0,42.0,t));           // risk folded into execute (the Turn), then restored
+const split=t=>sst(4.5,6.5,t);                                    // one agent becomes four
+const unionBack=t=>sst(42.4,43.4,t);                              // payoff: the opening frame again, now read correctly
+function rectOf(i,t){const sp=REDUCED?(t>=5.5?1:0):split(t),m=REDUCED?(t>=35?1:0):merged(t);let a=SLICE(i),b=L.nodes[i];let r={x:lerp(a.x,b.x,sp),y:lerp(a.y,b.y,sp),w:lerp(a.w,b.w,sp),h:lerp(a.h,b.h,sp)};
+  if(i===2){const t3=L.nodes[3];r={x:lerp(r.x,t3.x,m),y:lerp(r.y,t3.y,m),w:r.w,h:r.h};}
+  if(i===3&&m>0){const n2=L.nodes[2],n3=L.nodes[3];const j=L.vert?{x:n3.x,y:n2.y,w:n3.w,h:n3.y+n3.h-n2.y}:{x:n2.x,y:n3.y,w:n3.x+n3.w-n2.x,h:n3.h};
+    r={x:lerp(r.x,j.x,m),y:lerp(r.y,j.y,m),w:lerp(r.w,j.w,m),h:lerp(r.h,j.h,m)};}
+  return r;}
+function stationPt(st,t,lane){
+  if(st>=1&&st<=4){const r=rectOf(st-1,t);return L.vert?{x:r.x+r.w*.74+lane*L.laneSp,y:r.y+r.h/2}:{x:r.x+r.w/2,y:r.y+L.laneY0+(lane+2)*L.laneSp};}
+  const p=st===0?L.inlet:(st===5?L.outlet:C(UNION)),off=lane*L.lane;return L.vert?{x:p.x+off,y:p.y}:{x:p.x,y:p.y+off};}
+const ledgerRowPt=(slot)=>{const r=L.ledger,rh=(r.h-58)/8.2;return{x:r.x+28,y:r.y+58+slot*rh+rh/2-2,rh};};
+function sigPos(s,t){                                              // position + alpha + shape of a signal
+  let cur={st:0,lane:s.lane},pos=stationPt(0,t,s.lane),a=fade(t,s.t0,.4);
+  let shape='dot';
+  for(const [t0,t1,st] of s.path){const tgt=stationPt(st,t,s.lane);
+    if(t>=t1)pos=tgt;else if(t>t0){const u=ease((t-t0)/(t1-t0));if(REDUCED){const u2=sst(t0,t0+.3,t);return{pos:u2<.5?pos:tgt,a:a*(u2<.5?1-u2*2:u2*2-1),shape:'dot'};}
+      return{pos:{x:lerp(pos.x,tgt.x,u),y:lerp(pos.y,tgt.y,u)},a,shape:'dot'};}else break;}
+  if(s.end==='no'){if(t>=s.go[1]){const rp=ledgerRowPt(s.row);return{pos:{x:rp.x,y:rp.y},a:1,shape:'no'};}
+    if(t>s.go[0]){const rp=ledgerRowPt(s.row),u=ease((t-s.go[0])/(s.go[1]-s.go[0]));
+      if(REDUCED){const u2=sst(s.go[0],s.go[0]+.3,t);return{pos:u2<.5?pos:{x:rp.x,y:rp.y},a:u2<.5?1-u2*2:u2*2-1,shape:u2<.5?'dot':'no'};}
+      return{pos:{x:lerp(pos.x,rp.x,u),y:lerp(pos.y,rp.y,u)},a,shape:u>.85?'no':'dot'};}}
+  if(s.end==='order'&&s.path[s.path.length-1][2]===5&&t>=s.path[s.path.length-1][1])shape=s.replay?'order-unchecked':'order';
+  if(s.end==='order0'&&t>=s.path[s.path.length-1][1])shape='order0';
+  return{pos,a,shape};}
+
+// ---- drawing helpers ----
+function tx(s,x,y,font,col,al,alpha){ctx.globalAlpha=alpha===undefined?1:alpha;ctx.font=font;ctx.fillStyle=col;ctx.textAlign=al||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);ctx.globalAlpha=1;}
+function box(r,fill,stroke,lw,alpha){ctx.globalAlpha=alpha;ctx.beginPath();ctx.roundRect(r.x,r.y,r.w,r.h,3);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}ctx.globalAlpha=1;}
+function hatch(r,col,alpha){ctx.save();ctx.beginPath();ctx.rect(r.x,r.y,r.w,r.h);ctx.clip();ctx.strokeStyle=col;ctx.globalAlpha=alpha;ctx.lineWidth=2;for(let i=-r.h;i<r.w+r.h;i+=8){ctx.beginPath();ctx.moveTo(r.x+i,r.y+r.h);ctx.lineTo(r.x+i+r.h,r.y);ctx.stroke();}ctx.restore();ctx.globalAlpha=1;}
+function camAt(t){let z=1,f=2.5;if(REDUCED)return{z:1,f:2.5};let pz=1,pf=2.5;for(let i=0;i<CAMK.length;i++){const [kt,kz,kf]=CAMK[i];if(t>=kt){const u=sst(kt,kt+.8,t);z=lerp(pz,kz,u);f=lerp(pf,kf,u);if(u>=1){pz=kz;pf=kf;}else{break;}}else break;}return{z,f};}
+const stationFocus=f=>{const a=Math.floor(f),b=Math.min(4,a+1),u=f-a;const pa=a<1?C(L.nodes[0]):C(rectOf(a-1,99)),pb=b<1?C(L.nodes[0]):C(rectOf(b-1,99));return{x:lerp(pa.x,pb.x,u),y:lerp(pa.y,pb.y,u)};};
+
+function drawSignal(s,t,sp){const r=L.r;if(t<s.t0)return;const {pos,a,shape}=sp;if(a<=0)return;ctx.globalAlpha=a;
+  if(shape==='dot'){ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,7);ctx.fillStyle=K.accent;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=K.ink;ctx.stroke();
+    if(!s.single)tx(s.id,pos.x+(L.vert?r+10:0),pos.y+(L.vert?5:-r-8),`400 ${Math.round(15*L.fs)}px ${MONO}`,K.muted,L.vert?'left':'center');}
+  else if(shape==='no'){ctx.lineWidth=2.5;ctx.strokeStyle=K.ink;ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(pos.x-r*.55,pos.y-r*.55);ctx.lineTo(pos.x+r*.55,pos.y+r*.55);ctx.moveTo(pos.x+r*.55,pos.y-r*.55);ctx.lineTo(pos.x-r*.55,pos.y+r*.55);ctx.stroke();}
+  else{const sz=r*2+8,b={x:pos.x-sz/2,y:pos.y-sz/2,w:sz,h:sz};box(b,shape==='order-unchecked'?K.paper:K.ink,K.ink,2.5,a);if(shape==='order-unchecked')hatch(b,K.ink,.55*a);}
+  ctx.globalAlpha=1;}
+
+function nodeDraw(i,t){const r=rectOf(i,t),sp=REDUCED?(t>=5.5?1:0):split(t),m=REDUCED?(t>=35?1:0):merged(t);
+  let alpha=sp;if(i===2)alpha=sp*(1-m);if(alpha<=0.01)return;const rv=fade(t,REVEAL[i]);
+  const active=(t>=REVEAL[i]&&t<(REVEAL[i+1]||16.3))||(t>=17&&t<34&&[[17,21,0],[21,26,1],[26,31,2],[31,34,3]].some(([a,b,k])=>k===i&&t>=a&&t<b));
+  box(r,K.paper,K.ink,active?4:2,alpha);if(active)box({x:r.x-6,y:r.y-6,w:r.w+12,h:r.h+12},null,K.accent,2,alpha);
+  const nm=(i===3&&m>.5)?'Execute and risk':NODE_NAMES[i],c=C(r),fs=L.nameFs,qs=L.qFs;
+  const cl=clamp(rv*alpha,0,1);
+  if(L.vert){const ty=r.y+r.h-74;tx(nm,r.x+34,ty,`400 ${fs}px ${SERIF}`,K.ink,'left',cl);tx((i===3&&m>.5)?'Send it, and judge it too.':NODE_Q[i],r.x+34,ty+qs+14,`italic 400 ${qs}px ${SERIF}`,K.muted,'left',cl);}
+  else{const ty=r.y+Math.round(62*L.fs);tx(nm,c.x,ty,`400 ${fs}px ${SERIF}`,K.ink,'center',cl);const qt=(i===3&&m>.5)?'Send it, and judge it too.':NODE_Q[i];
+    if(L.wrapQ){const w=qt.split(' '),h=Math.ceil(w.length/2),l1=w.slice(0,h).join(' '),l2=w.slice(h).join(' ');tx(l1,c.x,ty+qs+8,`italic 400 ${qs}px ${SERIF}`,K.muted,'center',cl);if(l2)tx(l2,c.x,ty+2*qs+10,`italic 400 ${qs}px ${SERIF}`,K.muted,'center',cl);}
+    else tx(qt,c.x,ty+qs+10,`italic 400 ${qs}px ${SERIF}`,K.muted,'center',cl);}
+  // pass marks beside signals that cleared the filter
+  }
+function unionDraw(t){const sp=REDUCED?(t>=5.5?1:0):split(t),ub=REDUCED?(t>=43?1:0):unionBack(t);
+  const a1=1-sp,a2=ub;const a=Math.max(a1,a2);if(a<=0.01)return;const pad=a2>a1?14:0;const r={x:UNION.x-pad,y:UNION.y-pad,w:UNION.w+pad*2,h:UNION.h+pad*2};
+  box(r,a1>0.01?K.paper:null,K.ink,a2>a1?2:3,a);
+  const c=C(r);if(a1>0.01){tx('One agent',c.x,c.y+8,`400 ${Math.round(84*L.fs)}px ${SERIF}`,K.ink,'center',a1);tx('does everything',c.x,c.y+8+Math.round(42*L.fs),`italic 400 ${Math.round(30*L.fs)}px ${SERIF}`,K.muted,'center',a1);}
+  if(a2>0.01){const lab='One bot, four agents';if(L.vert)tx(lab,r.x+r.w/2,r.y-26,`italic 400 ${Math.round(34*L.fs)}px ${SERIF}`,K.ink,'center',a2);else tx(lab,r.x+r.w/2,r.y-26,`italic 400 ${Math.round(34*L.fs)}px ${SERIF}`,K.ink,'center',a2);}}
+function endpoints(t,sigPosList){
+  // inlet and outlet frames; counts come from what is on screen
+  const nsig=SIG.filter(s=>!s.single&&!s.replay&&t>=s.t0).length,orders=(t>=33.2?1:0)+(t>=40.5?1:0);
+  const fs=Math.round(26*L.fs),big=Math.round(72*L.fs);
+  const bar=(p,al)=>{ctx.strokeStyle=K.ink;ctx.lineWidth=3;ctx.beginPath();if(L.vert){ctx.moveTo(p.x-150,p.y);ctx.lineTo(p.x+150,p.y);}else{ctx.moveTo(p.x,p.y-110);ctx.lineTo(p.x,p.y+110);}ctx.stroke();};
+  bar(L.inlet);bar(L.outlet);
+  { const a=fade(t,40.6,.5);if(a>0){const o=stationPt(5,t,SIG[5].lane);tx('unchecked',o.x,o.y+L.r+(L.vert?46:36),`italic 400 ${Math.round((L.vert?28:24)*L.fs)}px ${SERIF}`,K.ink,'center',a);} }
+  const li=L.inlet,lo=L.outlet;
+  if(L.vert){tx('Signals',li.x-170,li.y+8,`italic 400 ${fs}px ${SERIF}`,K.muted,'right');tx(String(nsig),li.x-170,li.y-26,`400 ${big}px ${SERIF}`,K.ink,'right');
+    tx('Orders',lo.x-170,lo.y+8,`italic 400 ${fs}px ${SERIF}`,K.muted,'right');tx(String(orders),lo.x-170,lo.y-26,`400 ${big}px ${SERIF}`,K.ink,'right');}
+  else{tx('Signals',li.x,li.y+(FMT==='1x1'?130:142),`italic 400 ${fs}px ${SERIF}`,K.muted,'center');tx(String(nsig),li.x,li.y-130,`400 ${big}px ${SERIF}`,K.ink,'center');
+    tx('Orders',lo.x,lo.y+(FMT==='1x1'?130:142),`italic 400 ${fs}px ${SERIF}`,K.muted,'center');tx(String(orders),lo.x,lo.y-130,`400 ${big}px ${SERIF}`,K.ink,'center');}}
+
+function ledger(t){const r=L.ledger;box(r,K.paper,K.ink,2,1);const fs=L.ledFs;
+  tx('Ledger',r.x+28,r.y+40,`400 ${Math.round(36*L.fs)}px ${SERIF}`,K.ink,'left');tx('example checks, not a strategy',r.x+r.w-28,r.y+38,`italic 400 ${Math.round(24*L.fs)}px ${SERIF}`,K.muted,'right');
+  ctx.strokeStyle=K.hair;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(r.x+20,r.y+52);ctx.lineTo(r.x+r.w-20,r.y+52);ctx.stroke();
+  const dim=1-0.6*sst(34.4,35.4,t),cw=0.6*fs,agentW=16*cw+26,decW=4*cw+30;
+  ROWS.forEach(([slot,tm,id,agent,dec,reason])=>{const rp=ledgerRowPt(slot),rep=slot>=6,a=fade(t,tm+(dec==='No'?.9:0),.4)*(rep?1:dim);if(a<=0)return;
+    const x0=r.x+68,y=rp.y+7,xa=x0+3*cw+26,xd=xa+agentW,xr=xd+decW;ctx.globalAlpha=a;
+    if(rep)hatch({x:r.x+8,y:rp.y-rp.rh/2+4,w:r.w-16,h:rp.rh-4},K.ink,.12);
+    if(dec==='Pass'){ctx.fillStyle=K.ink;ctx.beginPath();ctx.arc(r.x+28,rp.y,L.r*.75,0,7);ctx.fill();}
+    tx(id,x0,y,`400 ${fs}px ${MONO}`,K.muted,'left');tx(agent,xa,y,`400 ${fs}px ${MONO}`,K.ink,'left');
+    tx(dec,xd,y,`700 ${fs}px ${MONO}`,K.ink,'left');
+    tx(reason,xr,y,`400 ${fs}px ${MONO}`,K.ink,'left');ctx.globalAlpha=1;});
+  { const a=fade(t,REPLAY_AT,.5),rp=ledgerRowPt(6);if(a>0)tx('Replay with one agent doing both jobs',r.x+28,rp.y+7,`italic 400 ${Math.round(26*L.fs)}px ${SERIF}`,K.muted,'left',a);}}
+
+function captions(t){for(const [a,b,lines] of CAPTIONS){if(t<a||t>=b)continue;const al=REDUCED?1:clamp(Math.min((t-a)/.3,(b-t)/.3),0,1);
+  lines.forEach((ln,i)=>tx(ln,L.cap.x,L.cap.y+L.cap.fs+i*L.cap.fs*1.08,`400 ${L.cap.fs}px ${SERIF}`,K.ink,'left',al));}}
+
+function frame(t){
+  ctx.globalAlpha=1;ctx.fillStyle=K.ground;ctx.fillRect(0,0,W,H);
+  // pipeline layer (camera reframes between ideas; stays still while text is read)
+  const cm=camAt(t),fp=stationFocus(cm.f);ctx.save();ctx.translate(fp.x,fp.y);ctx.scale(cm.z,cm.z);ctx.translate(-fp.x,-fp.y);
+  unionDraw(t);for(let i=0;i<4;i++)nodeDraw(i,t);
+  endpoints(t);
+  for(const s of SIG){if(s.single&&t>3.6&&false)continue;const sp=sigPos(s,t);if(s.single){const a=t<3.5?1:1-sst(3.5,4.1,t);if(a>0)drawSignal(s,t,{...sp,shape:'dot',a:sp.a*a});}else if(sp.shape==='no'){}else drawSignal(s,t,sp);}
+  // filter pass marks
+  [[2,'S1'],[2,'S3']].forEach(([st,id],i)=>{const a=fade(t,25.3,.4)*(1-sst(25.8,26.2,t));if(a>0){const s=SIG.find(x=>x.id===id&&!x.replay),p=stationPt(2,t,s.lane);ctx.strokeStyle=K.ink;ctx.lineWidth=3;ctx.globalAlpha=a;ctx.beginPath();const o=L.vert?{x:p.x+L.r+34,y:p.y}:{x:p.x+L.r+36,y:p.y};ctx.moveTo(o.x-8,o.y);ctx.lineTo(o.x-2,o.y+7);ctx.lineTo(o.x+10,o.y-8);ctx.stroke();ctx.globalAlpha=1;}});
+  ctx.restore();
+  ledger(t);
+  // ledger markers for rejected signals ride in the ledger layer, outside the camera
+  for(const s of SIG){if(s.end==='no'){const sp=sigPos(s,t);if(sp.shape==='no')drawSignal(s,t,sp);}}
+  captions(t);
+  tx('Not financial advice. For educational purposes only. Simulated data.',W/2,L.foot,`400 ${L.footFs}px ${MONO}`,K.muted,'center');
+}
+window.TIMELINE={duration:DURATION,fps:60,captions:CAPTIONS,rows:ROWS.map(r=>({t:r[1],slot:r[0],id:r[2],agent:r[3],decision:r[4],reason:r[5]})),
+  cues:{split:4.5,reveal:REVEAL,arrive:SIG.filter(s=>!s.single&&!s.replay).map(s=>s.t0),toFilter:21.0,rejects:[22.4,23.6,24.8,27.8],passFilter:25.3,sized:29.2,order:32.0,merge:34.2,replayOrder:39.5,payoff:41.4,union:42.4},
+  camera:CAMK};
+window.seek=t=>{frame(t);return true;};
+window.READY=(async()=>{await Promise.all([document.fonts.load('40px "Instrument Serif"'),document.fonts.load('italic 40px "Instrument Serif"'),document.fonts.load('20px "JetBrains Mono"'),document.fonts.load('700 20px "JetBrains Mono"')]);seek(+(q.get('t')||0));return true;})();
+if(q.get('play')==='1'){READY.then(()=>{const t0=performance.now();(function l(){seek(((performance.now()-t0)/1000)%DURATION);requestAnimationFrame(l);})();});}
+</script>
+</body></html>
