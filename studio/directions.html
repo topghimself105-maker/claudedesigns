@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Style Directions</title>
+<style>
+:root{--bg:#05070a;--t:#e8eef5;--m:#8a97a6;--l:#1c2530}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:16px/1.5 Inter,sans-serif;padding:24px 16px 64px}
+h1{font-size:28px;margin:0 0 4px}p.s{color:var(--m);margin:0 0 24px;max-width:70ch}
+.g{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.c{border:1px solid var(--l);border-radius:12px;overflow:hidden;background:#0b0f14}
+.c.win{border-color:#b6ff3c}
+.v{aspect-ratio:1;position:relative;display:grid;place-items:center;overflow:hidden}
+.v b{position:relative;z-index:2;font:700 22px/1.2 Inter;text-align:center;padding:0 16px}
+.i{padding:14px 16px;font-size:14px;color:var(--m)}.i h2{color:var(--t);font-size:17px;margin:0 0 4px}
+.sw{display:flex;gap:6px;margin-top:8px}.sw i{width:22px;height:22px;border-radius:50%;border:1px solid #fff2}
+.tag{color:#b6ff3c;font:600 12px 'DejaVu Sans Mono',monospace}
+/* A: funnel */ .a{background:radial-gradient(ellipse 22% 55% at 50% 60%,#b6ff3c66,transparent 70%),#05070a}
+/* B: bloom */ .b{background:radial-gradient(circle at 50% 50%,#ffa23c88,#6a3cff55 35%,transparent 65%),#050816}
+/* C: mono lines */ .cc{background:repeating-linear-gradient(90deg,#ffffff14 0 1px,transparent 1px 14px),#000}
+/* D: terminal */ .d{background:linear-gradient(#0a2a24,#05070a);}
+</style></head><body>
+<h1>Style directions</h1>
+<p class="s">Four looks taken from the four reference films. Same story, same data, different skin. Pick one; the winner is marked with the reason.</p>
+<div class="g">
+<div class="c win"><div class="v a"><b>Signal → Fill</b></div><div class="i"><span class="tag">WINNER</span><h2>A · Funnel / Vortex</h2>Black ground, one lime glow object, mono HUD. Reads at phone size, one focal action at a time, and the funnel is a literal picture of "most signals are rejected". Used in signal-to-fill.<div class="sw"><i style="background:#05070a"></i><i style="background:#b6ff3c"></i><i style="background:#ffa23c"></i><i style="background:#e8eef5"></i></div></div></div>
+<div class="c"><div class="v b"><b>Context bloom</b></div><div class="i"><h2>B · Neural bloom</h2>Multi-colour nodes on navy. Great for "how an AI agent reads context"; too many hues for trading, where colour should mean win/loss. Keep for AI-agent explainers.<div class="sw"><i style="background:#050816"></i><i style="background:#3ca0ff"></i><i style="background:#ff6a8c"></i><i style="background:#ffd23c"></i></div></div></div>
+<div class="c"><div class="v cc"><b>Pipeline · 51 agents</b></div><div class="i"><h2>C · Mono signal</h2>Pure white on black, dense HUD, no accent. Most premium and calm; weakest on mobile because labels get tiny. Borrow its dense side panels for YouTube 16:9.<div class="sw"><i style="background:#000"></i><i style="background:#fff"></i><i style="background:#8a97a6"></i></div></div></div>
+<div class="c"><div class="v d"><b>News + live charts</b></div><div class="i"><h2>D · Terminal montage</h2>Teal/red order tickets, footage and headline cuts. Needs licensed footage, so rights risk. Skip unless we shoot our own screen captures.<div class="sw"><i style="background:#0a2a24"></i><i style="background:#2dd4bf"></i><i style="background:#ff4d4d"></i></div></div></div>
+</div></body></html>

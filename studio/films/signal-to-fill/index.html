@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Signal to Fill</title>
+<style>
+  :root{--ground:#05070a;--panel:#0b0f14;--line:#1c2530;--text:#e8eef5;--muted:#8a97a6;--accent:#b6ff3c;--reject:#ffa23c;--danger:#ff4d4d}
+  html,body{margin:0;background:var(--ground);height:100%}
+  canvas{display:block;margin:0 auto;max-width:100vw;max-height:100vh}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="sim.js"></script>
+<script>
+// ?layout=1x1|9x16|16x9  ?reduced=1  ?play=1 (live preview)
+const q = new URLSearchParams(location.search);
+const LAYOUT = q.get('layout') || '1x1';
+const REDUCED = q.get('reduced') === '1';
+const SIZES = {'1x1':[1080,1080],'9x16':[1080,1920],'16x9':[1920,1080]};
+const [W,H] = SIZES[LAYOUT];
+const cv = document.getElementById('c'); cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d');
+const C = {ground:'#05070a',panel:'#0b0f14',line:'#1c2530',text:'#e8eef5',muted:'#8a97a6',accent:'#b6ff3c',reject:'#ffa23c',danger:'#ff4d4d'};
+const MONO = '"DejaVu Sans Mono", monospace', SANS = 'Inter, sans-serif';
+
+const S = SIM.build(SIM.SEED, SIM.N);
+const FIN = SIM.stats(S, SIM.DURATION);
+let eqMin = 0, eqMax = 0; S.exec.forEach(p => { eqMin = Math.min(eqMin, p.eq); eqMax = Math.max(eqMax, p.eq); });
+
+// ---- layout per aspect ratio -------------------------------------------------
+function layout() {
+  if (LAYOUT === '1x1') return {
+    bar:{x:40,y:22}, cap:{x:60,y:70,w:960,h:120,fs:44},
+    fun:{x:0,y:210,w:1080,h:500},
+    hud:[{x:40,y:735,w:320,h:270},{x:380,y:735,w:320,h:270},{x:720,y:735,w:320,h:270}], foot:{x:40,y:1042}};
+  if (LAYOUT === '9x16') return {
+    bar:{x:40,y:30}, cap:{x:60,y:90,w:960,h:150,fs:54},
+    fun:{x:0,y:270,w:1080,h:960},
+    hud:[{x:40,y:1260,w:1000,h:190},{x:40,y:1470,w:1000,h:190},{x:40,y:1680,w:1000,h:190}], foot:{x:40,y:1890}};
+  return {
+    bar:{x:40,y:24}, cap:{x:60,y:900,w:1240,h:120,fs:46},
+    fun:{x:0,y:80,w:1280,h:800},
+    hud:[{x:1340,y:84,w:540,h:290},{x:1340,y:394,w:540,h:290},{x:1340,y:704,w:540,h:290}], foot:{x:1340,y:1030}};
+}
+const L = layout();
+
+// ---- geometry -----------------------------------------------------------------
+const F = L.fun, cx = F.x + F.w/2, fTop = F.y + 30, bot = F.y + F.h - 72, span = bot - fTop;
+const w0 = Math.min(F.w*0.40, 520);
+const halfW = y => { const s = Math.min(1, Math.max(0, (y-fTop)/span)); return w0*(1 - 0.93*Math.pow(s,1.25)); };
+const gateY = [fTop + span*SIM.GATES[0], fTop + span*SIM.GATES[1], bot];
+const vFall = span / SIM.FALL;
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)), lerp=(a,b,t)=>a+(b-a)*t;
+const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const bump=(t,a,b,c,d)=>sstep(a,b,t)*(1-sstep(c,d,t));
+
+// ---- glow sprites ---------------------------------------------------------------
+function sprite(rgb){ const s=64,o=document.createElement('canvas');o.width=o.height=s;const g=o.getContext('2d');
+  const r=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);r.addColorStop(0,`rgba(${rgb},1)`);r.addColorStop(.25,`rgba(${rgb},.55)`);r.addColorStop(1,`rgba(${rgb},0)`);
+  g.fillStyle=r;g.fillRect(0,0,s,s);return o; }
+const SP = {white:sprite('232,238,245'),lime:sprite('182,255,60'),amber:sprite('255,162,60'),red:sprite('255,77,77')};
+function dot(sp, x, y, r, a){ if(a<=0.01||r<=0.2) return; ctx.globalAlpha=Math.min(1,a); ctx.drawImage(SP[sp],x-r,y-r,r*2,r*2); }
+
+// ---- particle position -----------------------------------------------------------
+function particle(p, t) {
+  const age = t - p.ts; if (age < 0) return null;
+  const rejT = p.k >= 0 ? p.tc[p.k] : null;
+  const yAt = tt => fTop + vFall*(tt - p.ts);
+  if (rejT !== null && t >= rejT) {
+    const dt = t - rejT, y0 = gateY[p.k], x0 = cx + p.u*halfW(y0)*0.92;
+    const a = 1 - dt/1.5; if (a <= 0) return null;
+    return {x:x0 + p.dir*(50*dt + 150*dt*dt*(0.6+p.rd)), y:y0 + 30*dt + 70*dt*dt, a, kind:'rej', r:5.5*(1-0.5*dt/1.5)};
+  }
+  if (p.fate === 'exec' && t >= p.tex) {
+    const dt = t - p.tex; const a = 1 - dt/0.6; if (a <= 0) return null;
+    return {x:cx + p.u*halfW(bot)*0.92*(1-dt), y:bot, a, kind:'exec', r:7+p.size*2, dt};
+  }
+  const y = yAt(t);
+  let stage = 0; if (t >= p.tc[0]) stage = 1; if (p.k !== 0 && t >= p.tc[1]) stage = 2;
+  return {x:cx + p.u*halfW(y)*0.92, y, a:0.9, kind:'fall', stage, r:5 + stage*0.8};
+}
+
+// ---- drawing ---------------------------------------------------------------------
+function text(s, x, y, font, color, align){ ctx.font=font; ctx.fillStyle=color; ctx.textAlign=align||'left'; ctx.textBaseline='alphabetic'; ctx.fillText(s,x,y); }
+function panel(r, title, tag){
+  ctx.globalAlpha=1; ctx.fillStyle=C.panel; ctx.fillRect(r.x,r.y,r.w,r.h);
+  ctx.strokeStyle=C.line; ctx.lineWidth=2; ctx.strokeRect(r.x+1,r.y+1,r.w-2,r.h-2);
+  text(title, r.x+16, r.y+28, `600 16px ${MONO}`, C.muted);
+  if (tag) text(tag, r.x+r.w-16, r.y+28, `600 16px ${MONO}`, (tag.includes('OFF')||/DD [3-9]|DD \d\d/.test(tag))?C.danger:C.accent, 'right');
+}
+
+function frame(t) {
+  const riskOff = t >= SIM.T_OFF && t < SIM.T_ON;
+  ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1; ctx.fillStyle=C.ground; ctx.fillRect(0,0,W,H);
+
+  // fTop bar
+  text('AUTOMATION STUDIO  /  SIGNAL TO FILL', L.bar.x, L.bar.y+14, `600 16px ${MONO}`, C.muted);
+  text(`SIMULATED  ${t.toFixed(1).padStart(4,'0')}s`, W-L.bar.x, L.bar.y+14, `600 16px ${MONO}`, C.muted, 'right');
+
+  // camera: reframe onto the risk gate while the idea "rejected is the job" lands
+  const zoom = REDUCED ? 1 : 1 + 0.16*bump(t,17.6,19.0,20.6,22.0);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(F.x,F.y,F.w,F.h); ctx.clip();
+  ctx.translate(cx, gateY[1]); ctx.scale(zoom,zoom); ctx.translate(-cx,-gateY[1]);
+
+  // funnel walls
+  ctx.strokeStyle='rgba(138,151,166,0.28)'; ctx.lineWidth=2; ctx.beginPath();
+  for(let s=0;s<=1.001;s+=0.05){const y=fTop+span*s;const x=cx-halfW(y); s===0?ctx.moveTo(x,y):ctx.lineTo(x,y);} ctx.stroke(); ctx.beginPath();
+  for(let s=0;s<=1.001;s+=0.05){const y=fTop+span*s;const x=cx+halfW(y); s===0?ctx.moveTo(x,y):ctx.lineTo(x,y);} ctx.stroke();
+
+  // activity per gate (pulse) from real events
+  const act=[0,0];
+  for(const p of S.P){ for(let g=0;g<2;g++){ const d=t-p.tc[g]; if(d>=0&&d<0.18 && (p.k===-1||p.k>=g)) act[g]+=1; } }
+  const labelsAt=[['02','FILTER'],['03', riskOff?'RISK GATE  OFF':'RISK GATE']];
+  for(let g=0;g<2;g++){
+    const y=gateY[g], hw=halfW(y)+14, off=(g===1&&riskOff);
+    const pulse=REDUCED?0.25:Math.min(1,act[g]*0.18);
+    ctx.globalAlpha=1; ctx.lineWidth=off?2:3; ctx.strokeStyle=off?C.danger:`rgba(232,238,245,${0.35+pulse*0.6})`;
+    ctx.setLineDash(off?[10,10]:[]); ctx.beginPath(); ctx.moveTo(cx-hw,y); ctx.lineTo(cx+hw,y); ctx.stroke(); ctx.setLineDash([]);
+    text(labelsAt[g][0], cx-hw-6, y-8, `600 15px ${MONO}`, C.muted, 'right');
+    text(labelsAt[g][1], cx-hw-6, y+14, `700 18px ${MONO}`, off?C.danger:C.text, 'right');
+  }
+  text('01', cx-w0-6, fTop-8, `600 15px ${MONO}`, C.muted, 'right'); text('SIGNAL', cx-w0-6, fTop+14, `700 18px ${MONO}`, C.text, 'right');
+  text('04', cx+halfW(bot)+60, bot-8, `600 15px ${MONO}`, C.muted, 'left'); text('EXECUTE', cx+halfW(bot)+60, bot+14, `700 18px ${MONO}`, C.text, 'left');
+
+  // particles
+  ctx.globalCompositeOperation='lighter';
+  const bloom = {win:0, loss:0};
+  for (const p of S.P) {
+    const q2 = particle(p,t); if(!q2) continue;
+    if (q2.kind==='fall') {
+      const sp = q2.stage===0 ? 'white' : 'lime';
+      dot(sp,q2.x,q2.y,q2.r*2.2,0.85);
+      ctx.globalAlpha=0.25; ctx.strokeStyle=q2.stage===0?'#e8eef5':'#b6ff3c'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(q2.x,q2.y); ctx.lineTo(q2.x,q2.y-16); ctx.stroke();
+    } else if (q2.kind==='rej') {
+      dot('amber',q2.x,q2.y,q2.r*2.6,q2.a);
+    } else {
+      const col = p.win ? 'lime' : 'red';
+      const big = q2.r*(REDUCED?2:3.2)*(1+0.8*Math.min(1,q2.dt*2));
+      dot(col,q2.x,q2.y,big,q2.a);
+      if(!REDUCED){ ctx.globalAlpha=q2.a*0.7; ctx.strokeStyle=p.win?C.accent:C.danger; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(q2.x,q2.y,10+q2.dt*90*(p.size>1?1.4:1),4+q2.dt*22,0,0,Math.PI*2); ctx.stroke(); }
+      bloom[p.win?'win':'loss']+=q2.a;
+    }
+  }
+  // core glow at the execute line
+  const gl = Math.min(1.4, 0.35 + bloom.win*0.35);
+  dot('lime', cx, bot, 90+gl*60, 0.35+gl*0.3);
+  if (bloom.loss>0) dot('red', cx, bot, 80+bloom.loss*40, Math.min(0.9,0.2+bloom.loss*0.3));
+  ctx.globalCompositeOperation='source-over'; ctx.restore(); ctx.globalAlpha=1;
+
+  // ---- HUD ------------------------------------------------------------------------
+  const st = SIM.stats(S,t);
+  // panel 1: gate ladder
+  { const r=L.hud[0]; panel(r,'GATE LADDER', riskOff?'RISK: OFF':'RISK: ON');
+    const rows=[['SIGNAL',st.signals,st.signals,C.text],['FILTER',st.filtPass+st.riskRej+st.riskPass-st.riskRej,0,C.text]];
+    const sig=Math.max(1,st.signals);
+    const pass1=st.filtPass, pass2=st.riskPass;
+    const data=[['SIGNAL',st.signals,C.text],['PASS FILTER',pass1,C.text],['PASS RISK',pass2,C.accent],['EXECUTED',st.exec,C.accent]];
+    const rowH=(r.h-56)/4;
+    data.forEach((d,i)=>{ const y=r.y+52+i*rowH, bw=r.w-32;
+      text(d[0], r.x+16, y+16, `600 15px ${MONO}`, C.muted);
+      text(String(d[1]), r.x+r.w-16, y+16, `700 20px ${MONO}`, d[2], 'right');
+      ctx.fillStyle='#141b24'; ctx.fillRect(r.x+16,y+24,bw,7);
+      ctx.fillStyle=d[2]; ctx.fillRect(r.x+16,y+24,bw*clamp(d[1]/sig,0,1),7); });
+  }
+  // panel 2: rejection log
+  { const r=L.hud[1]; panel(r,'REJECTION LOG', `${st.filtRej+st.riskRej} REJECTED`);
+    const ev=[]; for(const p of S.P){ if(p.k>=0 && p.tc[p.k]<=t) ev.push(p); }
+    ev.sort((a,b)=>a.tc[a.k]-b.tc[b.k]);
+    const last=ev.slice(-6).reverse(); const rows=Math.max(5,Math.floor((r.h-52)/26));
+    last.slice(0,rows).forEach((p,i)=>{ const y=r.y+56+i*((r.h-64)/rows)+14, fade=1-i*0.12;
+      ctx.globalAlpha=fade;
+      text(String(p.i).padStart(3,'0'), r.x+16, y, `600 15px ${MONO}`, C.muted);
+      text(p.k===0?'FILTER':'RISK', r.x+62, y, `700 15px ${MONO}`, C.reject);
+      text(p.reason, r.x+130, y, `600 15px ${MONO}`, C.text); ctx.globalAlpha=1; });
+    if(riskOff) text('risk gate bypassed', r.x+16, r.y+r.h-14, `700 15px ${MONO}`, C.danger);
+  }
+  // panel 3: equity + drawdown
+  { const r=L.hud[2]; panel(r,'EQUITY  R, SIMULATED', st.dd>0.01?`DD ${st.dd.toFixed(1)}R`:'DD 0.0R');
+    const gx=r.x+16, gy=r.y+52, gw=r.w-32, gh=r.h-96;
+    const rng=Math.max(eqMax,1)-Math.min(eqMin,-1), x=tt=>gx+gw*(tt/SIM.DURATION), y=v=>gy+gh*(1-(v-Math.min(eqMin,-1))/rng);
+    ctx.strokeStyle=C.line; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(gx,y(0)); ctx.lineTo(gx+gw,y(0)); ctx.stroke();
+    const xo=x(SIM.T_OFF), xn=x(SIM.T_ON); ctx.fillStyle='rgba(255,77,77,0.10)'; ctx.fillRect(xo,gy,xn-xo,gh);
+    ctx.strokeStyle=st.dd>3?C.danger:C.accent; ctx.lineWidth=3; ctx.lineJoin='round'; ctx.beginPath(); ctx.moveTo(x(0),y(0)); let last=0;
+    for(const p of S.exec){ if(p.tex>t)break; ctx.lineTo(x(p.tex),y(last)); ctx.lineTo(x(p.tex),y(p.eq)); last=p.eq; }
+    ctx.lineTo(x(t),y(last)); ctx.stroke();
+    ctx.fillStyle=C.text; ctx.beginPath(); ctx.arc(x(t),y(last),5,0,Math.PI*2); ctx.fill();
+    text(`${st.eq>=0?'+':''}${st.eq.toFixed(1)}R`, r.x+16, r.y+r.h-14, `700 22px ${MONO}`, st.eq>=0?C.accent:C.danger);
+    text(`${st.exec} trades`, r.x+r.w-16, r.y+r.h-14, `600 16px ${MONO}`, C.muted, 'right');
+  }
+
+  // ---- captions (burned in) ------------------------------------------------------------
+  for (const [a,b,lines] of SIM.CAPTIONS) {
+    if (t<a || t>=b) continue;
+    const al = Math.min(1, (t-a)/0.25, (b-t)/0.25);
+    ctx.globalAlpha = REDUCED ? 1 : clamp(al,0,1);
+    const bold = (t>=27.5 && lines.length===2);
+    lines.forEach((ln,i)=>{ const yy=L.cap.y+L.cap.fs+i*(L.cap.fs*1.25);
+      const hl = (bold && i===1) ? C.accent : C.text;
+      text(ln, L.cap.x + (LAYOUT==='16x9'?0:0), yy, `700 ${L.cap.fs}px ${SANS}`, hl); });
+    ctx.globalAlpha=1;
+  }
+  text('Simulated data for illustration. Not financial advice.', L.foot.x, L.foot.y, `600 14px ${MONO}`, C.muted);
+}
+
+// ---- render contract -----------------------------------------------------------------
+window.TIMELINE = { duration: SIM.DURATION, fps: 30, captions: SIM.CAPTIONS,
+  cues: S.exec.map(p => ({t:p.tex, win:p.win, size:p.size})),
+  markers: {riskOff: SIM.T_OFF, riskOn: SIM.T_ON, zoomIn: 17.6, hook: 0.5, payoff: 28.0} };
+window.seek = function(t){ frame(t); return true; };
+window.seek(0);
+if (q.get('play') === '1') { const t0=performance.now(); (function loop(){ const t=((performance.now()-t0)/1000)%SIM.DURATION; seek(t); requestAnimationFrame(loop); })(); }
+</script>
+</body>
+</html>
