@@ -18,10 +18,10 @@ await page.goto(url); await page.evaluate(() => document.fonts.ready);
 const tl = await page.evaluate(() => window.TIMELINE);
 writeFileSync(resolve(out, `${film}.cues.json`), JSON.stringify(tl));
 const srt = tl.captions.map(([a, b, l], i) => { const f = s => new Date(s * 1000).toISOString().slice(11, 23).replace('.', ','); return `${i + 1}\n${f(a)} --> ${f(b)}\n${l.join('\n')}\n`; }).join('\n');
-writeFileSync(resolve(out, `${film}.srt`), srt);
+if (tl.captions.length) writeFileSync(resolve(out, `${film}.srt`), srt);
 
 const silent = resolve(out, `${film}_${tag}.silent.mp4`);
-const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', String(tl.fps), '-i', '-', '-c:v', 'libx264', '-crf', '16', '-pix_fmt', 'yuv420p', '-r', String(tl.fps), silent], { stdio: ['pipe', 'inherit', 'inherit'] });
+const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', String(tl.fps), '-i', '-', '-vf', 'scale=out_color_matrix=bt709:out_range=tv:flags=accurate_rnd+full_chroma_int+bitexact,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-profile:v', 'high', '-crf', '14', '-maxrate', '22M', '-bufsize', '44M', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv', '-r', String(tl.fps), '-movflags', '+faststart', silent], { stdio: ['pipe', 'inherit', 'inherit'] });
 const n = Math.round(tl.duration * tl.fps);
 for (let i = 0; i < n; i++) {
   await page.evaluate(t => window.seek(t), i / tl.fps);
