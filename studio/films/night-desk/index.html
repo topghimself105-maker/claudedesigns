@@ -65,15 +65,16 @@ const visible=(x,y,m)=>x>-m&&x<W+m&&y>SY0-m&&y<SY1+m;
 const GL=Array.from({length:46},(_,i)=>String.fromCharCode(0xFF66+i)).join('')+'0123456789:+-*=<>';
 const bump=(t,a,b,c,d)=>sst(a,b,t)*(1-sst(c,d,t));
 function rain(t,pass){ctx.save();ctx.beginPath();ctx.rect(0,SY0,W,SY1-SY0);ctx.clip();ctx.textAlign='center';
-  const boost=1+1.1*bump(t,TC-0.15,TC+0.25,TC+0.9,TC+2.8),tick=Math.floor(t*8),span=SY1-SY0+300;
-  const cols=pass==='back'?108:30,pitch=W/cols;
-  for(let c=0;c<cols;c++){const id=c+(pass==='back'?0:500),depth=R(id,63),sz=pass==='back'?(depth<.34?8:depth<.7?10:13):13,k=[1,2,3,4,5][Math.floor(R(id,64)*5)],
-      u=mod(R(id,61)+k*t/D,1),hy=SY0-160+u*span,len=8+Math.floor(R(id,62)*16),x=pitch*(c+.5)+(R(id,65)-.5)*pitch*.5,step=sz*1.25;
-    const base=(pass==='back'?0.10+0.16*depth:0.07+0.07*depth)*boost,bright=0.45+0.55*depth;
-    ctx.font=`400 ${sz}px ${MONO}`;
-    for(let j=0;j<len;j++){const y=hy-j*step;if(y<SY0-8||y>SY1+8)continue;const g=GL[Math.floor(R(id*37+j,mod(tick+j*3+c,208))*GL.length)];
-      if(j===0){ctx.fillStyle=`rgba(215,255,225,${Math.min(1,(pass==='back'?0.55:0.35)*bright*boost)})`;ctx.shadowColor='#00ff41';ctx.shadowBlur=pass==='back'?6:0;}
-      else{ctx.shadowBlur=0;ctx.fillStyle=`rgba(0,255,65,${Math.min(0.9,base*(1-j/len)*(j<3?1.5:1))})`;}
+  // fewer, thicker, greener streams: big bold glyphs, long glowing trails, white-green head
+  const boost=1+1.0*bump(t,TC-0.15,TC+0.25,TC+0.9,TC+2.8),tick=Math.floor(t*6),span=SY1-SY0+420;
+  const cols=pass==='back'?44:12,pitch=W/cols;
+  for(let c=0;c<cols;c++){const id=c+(pass==='back'?0:500),depth=R(id,63),sz=pass==='back'?(depth<.4?15:depth<.75?19:24):22,k=[1,2,2,3,4][Math.floor(R(id,64)*5)],
+      u=mod(R(id,61)+k*t/D,1),hy=SY0-200+u*span,len=9+Math.floor(R(id,62)*13),x=(pass==='back'?pitch*(c+.5):470+(W-470)*(c+.5)/cols)+(R(id,65)-.5)*pitch*.35,step=sz*1.12;
+    const base=(pass==='back'?0.30+0.34*depth:0.16+0.12*depth),bright=0.55+0.45*depth;
+    for(let j=0;j<len;j++){const y=hy-j*step;if(y<SY0-14||y>SY1+14)continue;const g=GL[Math.floor(R(id*37+j,mod(tick+j*3+c,156))*GL.length)];
+      ctx.font=`700 ${sz}px ${MONO}`;
+      if(j===0){ctx.fillStyle=`rgba(225,255,232,${Math.min(1,0.95*bright*boost)})`;ctx.shadowColor='#00ff41';ctx.shadowBlur=pass==='back'?14:6;}
+      else{const f=1-j/len;ctx.shadowColor='#00ff41';ctx.shadowBlur=j<4&&pass==='back'?6:0;ctx.fillStyle=`rgba(${Math.round(0+40*f*f)},${Math.round(255*(0.55+0.45*f))},${Math.round(65+40*f*f)},${Math.min(0.95,base*Math.pow(f,0.8)*(j<3?1.35:1)*boost)})`;}
       ctx.fillText(g,x,y);}}
   ctx.shadowBlur=0;ctx.restore();}
 
