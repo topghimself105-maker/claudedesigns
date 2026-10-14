@@ -55,14 +55,21 @@ function barAngle(t){const scan=-0.02+0.50*Math.sin(TAU*2*t/D+0.4)+0.12*Math.sin
 const visible=(x,y,m)=>x>-m&&x<W+m&&y>SY0-m&&y<SY1+m;
 
 
-// ---- matrix rain (faint, vertical, periodic) ----
-const GL='01234567890ABCDEF<>/\\+-=*#%$:;';
-function rain(t){ctx.save();ctx.beginPath();ctx.rect(0,SY0,W,SY1-SY0);ctx.clip();ctx.font=`400 10px ${MONO}`;ctx.textAlign='center';
-  const span=SY1-SY0+260,tick=Math.floor(t*8);
-  for(let c=0;c<54;c++){const x=14+c*20,k=[2,3,4][c%3],u=mod(R(c,61)+k*t/D,1),hy=SY0-130+u*span,len=10+Math.floor(R(c,62)*10);
-    for(let j=0;j<len;j++){const y=hy-j*12;if(y<SY0-6||y>SY1+6)continue;const g=GL[Math.floor(R(c*31+j,mod(tick+j*3,208))*GL.length)];
-      const a=j===0?0.55:0.20*(1-j/len);ctx.fillStyle=j===0?`rgba(190,255,205,${a})`:`rgba(0,255,65,${a})`;ctx.fillText(g,x,y);}}
-  ctx.restore();}
+// ---- matrix rain (vertical, periodic, layered) ----
+const GL=Array.from({length:46},(_,i)=>String.fromCharCode(0xFF66+i)).join('')+'0123456789:+-*=<>';
+const bump=(t,a,b,c,d)=>sst(a,b,t)*(1-sst(c,d,t));
+function rain(t,pass){ctx.save();ctx.beginPath();ctx.rect(0,SY0,W,SY1-SY0);ctx.clip();ctx.textAlign='center';
+  const boost=1+1.1*bump(t,TC-0.15,TC+0.25,TC+0.9,TC+2.8),tick=Math.floor(t*8),span=SY1-SY0+300;
+  const cols=pass==='back'?108:30,pitch=W/cols;
+  for(let c=0;c<cols;c++){const id=c+(pass==='back'?0:500),depth=R(id,63),sz=pass==='back'?(depth<.34?8:depth<.7?10:13):13,k=[1,2,3,4,5][Math.floor(R(id,64)*5)],
+      u=mod(R(id,61)+k*t/D,1),hy=SY0-160+u*span,len=8+Math.floor(R(id,62)*16),x=pitch*(c+.5)+(R(id,65)-.5)*pitch*.5,step=sz*1.25;
+    const base=(pass==='back'?0.10+0.16*depth:0.07+0.07*depth)*boost,bright=0.45+0.55*depth;
+    ctx.font=`400 ${sz}px ${MONO}`;
+    for(let j=0;j<len;j++){const y=hy-j*step;if(y<SY0-8||y>SY1+8)continue;const g=GL[Math.floor(R(id*37+j,mod(tick+j*3+c,208))*GL.length)];
+      if(j===0){ctx.fillStyle=`rgba(215,255,225,${Math.min(1,(pass==='back'?0.55:0.35)*bright*boost)})`;ctx.shadowColor='#00ff41';ctx.shadowBlur=pass==='back'?6:0;}
+      else{ctx.shadowBlur=0;ctx.fillStyle=`rgba(0,255,65,${Math.min(0.9,base*(1-j/len)*(j<3?1.5:1))})`;}
+      ctx.fillText(g,x,y);}}
+  ctx.shadowBlur=0;ctx.restore();}
 
 // ---- ring scene ----
 function scene(t){
@@ -142,7 +149,7 @@ function formula(t){const hot=sst(TLOCK1,TC,t)*(1-sst(24,25.5,t));const x=W-30,y
   tx(`SL 38 pts → R = 3.0`,x,y+46,9,K.g2,'right');}
 
 // ---- tabs ----
-function tabs(t){const c=counters(t),tw=(W-60)/5;tx('FRANK369 / NIGHT DESK',30,28,13,K.w,'left',700);tx(`NQ · SIM · NY ${clockStr(t)}`,W-30,28,10.5,K.g1,'right');
+function tabs(t){const c=counters(t),tw=(W-60)/5;tx(`NQ · SIM · NY ${clockStr(t)}`,W-30,28,10.5,K.g1,'right');
   ctx.strokeStyle=K.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(30,40);ctx.lineTo(W-30,40);ctx.stroke();
   PH.forEach((p,i)=>{const x=30+i*tw,act=t>=p[1]&&t<p[2],done=t>=p[2];
     tx(p[0]+(i<4?'  →':''),x,62,10,act?K.w:K.g2,'left');tx(fmt(c[i]),x,90,22,act?K.w:(done?K.g1:K.g2),'left',act?700:400);
@@ -181,9 +188,17 @@ function pBacktest(t){const r=pr(7);frameBox(r,'STRATEGY / BACKTEST INDEX','SIM'
 
 function draw(t){
   ctx.globalAlpha=1;ctx.fillStyle=K.bg;ctx.fillRect(0,0,W,H);
-  rain(t);scene(t);callouts(t);formula(t);tabs(t);
+  rain(t,'back');scene(t);rain(t,'front');callouts(t);formula(t);tabs(t);
   [pFeed,pFlow,pCode,pMarket,pSources,pValid,pAgents,pBacktest].forEach(f=>f(t));
-  tx('Simulated data. Illustrates a rule set, not financial advice.',30,1342,9,K.g2,'left');
+  topLayer(t);
+}
+function topLayer(t){
+  // name plate: solid dark backing, larger than the other top-bar text, above rain / streaks / ring
+  ctx.fillStyle='#000';ctx.fillRect(14,6,318,34);ctx.strokeStyle=K.acc;ctx.lineWidth=1;ctx.strokeRect(14.5,6.5,317,33);
+  ctx.font=`700 18px ${MONO}`;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle=K.acc;ctx.fillText('FRANK369',26,29);const w1=ctx.measureText('FRANK369 ').width;ctx.fillStyle='#fff';ctx.fillText('/ NIGHT DESK',26+w1,29);
+  // disclaimer: centred, light grey on dark backing
+  const msg='Not financial advice. For educational purposes only. Simulated data.';ctx.font=`400 10.5px ${MONO}`;const mw=ctx.measureText(msg).width;
+  ctx.fillStyle='rgba(0,0,0,0.92)';ctx.fillRect(W/2-mw/2-12,1326,mw+24,22);ctx.fillStyle='#c4c3d0';ctx.textAlign='center';ctx.fillText(msg,W/2,1341);
 }
 function frame(t){t=mod(t,D);ctx=ctx0;draw(t);
   if(t>D-FADE){const a=sst(0,1,(t-(D-FADE))/FADE);ctx=ctx1;draw(t-D);ctx=ctx0;ctx0.globalAlpha=a;ctx0.drawImage(cvB,0,0);ctx0.globalAlpha=1;}}
