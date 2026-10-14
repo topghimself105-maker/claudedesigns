@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ICT Desk</title>
+<style>:root{--ground:#05070a}html,body{margin:0;background:var(--ground);height:100%}canvas{display:block;margin:0 auto;max-width:100vw;max-height:100vh}</style>
+</head><body><canvas id="c"></canvas>
+<script src="sim.js"></script>
+<script>
+// ?layout=4x5|16x9  ?reduced=1  ?play=1
+const q = new URLSearchParams(location.search);
+const LAYOUT = q.get('layout') || '4x5', REDUCED = q.get('reduced') === '1';
+const SIZES = {'4x5':[1080,1350],'16x9':[1920,1080]}; const [W,H] = SIZES[LAYOUT];
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d');
+const C = {ground:'#05070a',panel:'#0b0f14',line:'#1c2530',text:'#e8eef5',muted:'#8a97a6',dim:'#4a5663',accent:'#b6ff3c',reject:'#ffa23c',danger:'#ff4d4d',fvg:'#ff4fd8',ob:'#8f7bff'};
+const MONO='"DejaVu Sans Mono", monospace', SANS='Inter, sans-serif';
+
+const CD = SIM2.candles(), D = SIM2.detect(CD), N = SIM2.N, PB = SIM2.PLAYBOOK;
+const T = i => SIM2.timeAt(i);                       // seconds at which candle i closes
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)), lerp=(a,b,t)=>a+(b-a)*t, sst=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const fade = (t, at, d=0.35) => REDUCED ? (t>=at?1:0) : clamp((t-at)/d, 0, 1);
+
+// ---- layout -----------------------------------------------------------------
+const LY = LAYOUT==='4x5' ? {
+  bar:{x:30,y:22}, chart:{x:30,y:56,w:1020,h:640}, cap:{x:50,y:708,w:980,fs:40}, foot:{x:30,y:1336},
+  p:{check:{x:30,y:812,w:430,h:250}, dial:{x:470,y:812,w:260,h:250}, card:{x:740,y:812,w:310,h:250},
+     log:{x:30,y:1075,w:520,h:240}, meter:{x:560,y:1075,w:230,h:240}, unv:{x:800,y:1075,w:250,h:240}}
+} : {
+  bar:{x:30,y:22}, chart:{x:30,y:56,w:1230,h:770}, cap:{x:50,y:836,w:1180,fs:46}, foot:{x:30,y:1056},
+  p:{check:{x:1280,y:56,w:610,h:262}, dial:{x:1280,y:328,w:295,h:250}, card:{x:1585,y:328,w:305,h:250},
+     log:{x:1280,y:588,w:610,h:230}, meter:{x:1280,y:828,w:295,h:200}, unv:{x:1585,y:828,w:305,h:200}}
+};
+
+// ---- view (camera) over the chart ----------------------------------------------
+const VIEWS = [ // t, x0, x1, p0, p1
+  [0,0,46,21366,21444],[7,12,70,21366,21444],[10,36,94,21360,21450],[13,60,100,21360,21478],
+  [17,66,108,21360,21526],[24,66,108,21360,21528],[28,0,108,21360,21530],[32,0,108,21360,21530]];
+function view(t){ for(let k=1;k<VIEWS.length;k++){ if(t<=VIEWS[k][0]){ const a=VIEWS[k-1], b=VIEWS[k], u=REDUCED?(t>=b[0]?1:0):sst(a[0],b[0],t); return {x0:lerp(a[1],b[1],u),x1:lerp(a[2],b[2],u),p0:lerp(a[3],b[3],u),p1:lerp(a[4],b[4],u)}; } } const z=VIEWS[VIEWS.length-1]; return {x0:z[1],x1:z[2],p0:z[3],p1:z[4]}; }
+
+function text(s,x,y,font,color,align){ctx.font=font;ctx.fillStyle=color;ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);}
+function panel(r,title,tag,tagColor){ ctx.globalAlpha=1; ctx.fillStyle=C.panel; ctx.fillRect(r.x,r.y,r.w,r.h); ctx.strokeStyle=C.line; ctx.lineWidth=2; ctx.strokeRect(r.x+1,r.y+1,r.w-2,r.h-2);
+  text(title,r.x+14,r.y+26,`600 14px ${MONO}`,C.muted); if(tag) text(tag,r.x+r.w-14,r.y+26,`700 14px ${MONO}`,tagColor||C.accent,'right'); }
+
+// ---- derived timeline of events --------------------------------------------------
+const EV = D.ev.map(e => ({...e, t: T(e.i + 1)}));
+const tKZ = T(D.kzIdx), tSSL = T(D.ssl.b+1), tBSL = T(D.bsl.b+1);
+const tSweep = T(D.sweep.i+1), tMSS = T(D.mss+1), tFVG = T(D.fvg.i+1), tLeg = T(D.leg.i+1), tStage = T(D.stageIdx+1),
+      tFill = T(D.fillIdx+1), tTP = T(D.tpIdx+1), tSign = tStage + 0.7;
+const CHECKS = [
+  ['KILLZONE',  tKZ,    'London 02:00-05:00'],
+  ['LIQUIDITY', tKZ+0.3,`SSL ${SIM2.price(Math.round(D.ssl.level))} equal lows`],
+  ['SWEEP',     tSweep, `${SIM2.hm(D.sweep.i)} wick ${Math.round(D.ssl.level-D.sweep.ext)}pt below`],
+  ['STRUCTURE', tMSS,   `MSS + displacement ${SIM2.hm(D.mss)}`],
+  ['FVG + OTE', tStage, `overlap ${SIM2.price(Math.round(Math.max(D.ote.lo,D.fvg.lo)))}-${SIM2.price(Math.round(Math.min(D.ote.hi,D.fvg.hi)))}`],
+  ['RISK',      tStage+0.3,`stop ${D.risk}pt · ${D.rr.toFixed(1)}R · ${PB.riskPct}% acct`]];
+
+// ---- chart -------------------------------------------------------------------
+function chart(t){
+  const R = LY.chart, V = view(t), head = SIM2.headAt(t), ax = 78;           // right axis margin
+  const px = i => R.x + (i - V.x0) / (V.x1 - V.x0) * (R.w - ax), py = p => R.y + 14 + (1 - (p - V.p0)/(V.p1 - V.p0)) * (R.h - 40);
+  const cw = (R.w - ax) / (V.x1 - V.x0);
+  ctx.save(); ctx.fillStyle=C.panel; ctx.fillRect(R.x,R.y,R.w,R.h); ctx.strokeStyle=C.line; ctx.lineWidth=2; ctx.strokeRect(R.x+1,R.y+1,R.w-2,R.h-2);
+  ctx.beginPath(); ctx.rect(R.x+2,R.y+2,R.w-4,R.h-4); ctx.clip();
+  // grid + axis
+  const step = (V.p1-V.p0) > 100 ? 20 : 10;
+  for (let p=Math.ceil(V.p0/step)*step; p<=V.p1; p+=step){ ctx.strokeStyle='rgba(138,151,166,0.10)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(R.x,py(p)); ctx.lineTo(R.x+R.w-ax,py(p)); ctx.stroke(); text(SIM2.price(p), R.x+R.w-8, py(p)+5, `600 14px ${MONO}`, C.muted,'right'); }
+  for (let i=0;i<N;i+=12){ const x=px(i); if(x<R.x||x>R.x+R.w-ax) continue; ctx.strokeStyle='rgba(138,151,166,0.08)'; ctx.beginPath(); ctx.moveTo(x,R.y+10); ctx.lineTo(x,R.y+R.h-26); ctx.stroke(); text(SIM2.hm(i), x, R.y+R.h-8, `600 13px ${MONO}`, C.dim, 'center'); }
+  // killzone / range shading
+  const band=(i0,i1,col,label)=>{ const x0=px(i0), x1=px(i1); ctx.fillStyle=col; ctx.fillRect(x0,R.y+4,x1-x0,R.h-30); text(label,Math.max(x0,R.x)+8,R.y+R.h-36,`700 13px ${MONO}`,C.muted); };
+  band(0,48,'rgba(143,123,255,0.06)','ASIA RANGE'); if(t>=tKZ-0.2) band(D.kzIdx,N,`rgba(182,255,60,${0.05*fade(t,tKZ-0.2,0.8)})`,'LONDON KILLZONE');
+  // liquidity levels
+  const level=(a,lvl,col,label,at,dash,endIdx)=>{ const f=fade(t,at); if(!f) return; ctx.globalAlpha=f; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.setLineDash(dash||[8,7]); ctx.beginPath(); ctx.moveTo(px(a),py(lvl)); ctx.lineTo(px(endIdx??N),py(lvl)); ctx.stroke(); ctx.setLineDash([]);
+    text(label,Math.max(px(a),R.x)+8,py(lvl)-7,`700 13px ${MONO}`,col); ctx.globalAlpha=1; };
+  level(D.bsl.a,D.bsl.level,C.reject,`BSL ${SIM2.price(Math.round(D.bsl.level))}  eq. highs`,tBSL);
+  level(D.ssl.a,D.ssl.level,C.reject,`SSL ${SIM2.price(Math.round(D.ssl.level))}  eq. lows`,tSSL);
+  level(D.kzIdx,PB.pdh,C.accent,`PDH ${SIM2.price(PB.pdh)}  target`,tKZ+0.5,[3,8]);
+  // zones
+  const zone=(i0,i1,lo,hi,col,fa,label,at)=>{ const f=fade(t,at); if(!f) return; ctx.globalAlpha=f; ctx.fillStyle=col+fa; ctx.fillRect(px(i0),py(hi),px(i1)-px(i0),py(lo)-py(hi)); ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.strokeRect(px(i0),py(hi),px(i1)-px(i0),py(lo)-py(hi)); text(label,px(i0)+6,py(hi)+16,`700 13px ${MONO}`,col); ctx.globalAlpha=1; };
+  zone(D.ob.i,D.fillIdx+1,D.ob.lo,D.ob.hi,C.ob,'33','OB',tFVG);
+  zone(D.fvg.i-1,D.fillIdx+1,D.fvg.lo,D.fvg.hi,C.fvg,'30','FVG',tFVG);
+  zone(D.leg.i,D.fillIdx+1,D.ote.lo,D.ote.hi,C.accent,'18','OTE 62-79',tLeg);
+  // candles (partial last candle animates open->close)
+  const hi = Math.floor(head), fr = head - hi;
+  for (let i=0;i<=Math.min(hi,N-1);i++){ let c=CD[i]; if(i===hi&&fr<1){ const cl=c.o+(c.c-c.o)*fr; c={o:c.o,c:cl,h:Math.max(c.o,cl,c.o+(c.h-c.o)*fr),l:Math.min(c.o,cl,c.o-(c.o-c.l)*fr)}; }
+    const x=px(i+0.5), up=c.c>=c.o, col=up?C.accent:'#7d8a99'; if(x<R.x-10||x>R.x+R.w-ax+10) continue;
+    ctx.strokeStyle=col; ctx.lineWidth=Math.max(1,cw*0.12); ctx.beginPath(); ctx.moveTo(x,py(c.h)); ctx.lineTo(x,py(c.l)); ctx.stroke();
+    ctx.fillStyle=col; const bw=Math.max(2,cw*0.66), y0=py(Math.max(c.o,c.c)), hh=Math.max(1.5,Math.abs(py(c.o)-py(c.c))); ctx.fillRect(x-bw/2,y0,bw,hh); }
+  // sweeps (valid = amber ring, skipped = grey ring + cross)
+  for (const s of D.sweeps){ const ts=T(s.i+1), f=fade(t,ts); if(!f) continue; const x=px(s.i+0.5), y=py(s.ext); if(x<R.x+10||x>R.x+R.w-ax) continue; ctx.globalAlpha=f; ctx.strokeStyle=s.valid?C.reject:C.muted; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(x,y,s.valid?15:12,0,Math.PI*2); ctx.stroke();
+    const lab=s.valid?`${s.side} SWEEP  ${SIM2.hm(s.i)}`:`${s.side} SWEEP  ${SIM2.hm(s.i)}  SKIP`; const above=s.side==='BSL';
+    text(lab, Math.min(x+20, R.x+R.w-ax-170), above?y-6:y+30, `700 14px ${MONO}`, s.valid?C.reject:C.muted); ctx.globalAlpha=1; }
+  // MSS line
+  { const f=fade(t,tMSS); if(f){ const y=py(CD[D.sweep.swing].h); ctx.globalAlpha=f; ctx.strokeStyle=C.text; ctx.lineWidth=2; ctx.setLineDash([6,5]); ctx.beginPath(); ctx.moveTo(px(D.sweep.swing+0.5),y); ctx.lineTo(px(D.mss+0.5),y); ctx.stroke(); ctx.setLineDash([]); text('MSS',px(D.sweep.swing+0.5),y-8,`700 14px ${MONO}`,C.text); ctx.globalAlpha=1; } }
+  // position (entry / stop / target) once staged
+  { const f=fade(t,tStage); if(f){ const x0=px(D.stageIdx+0.5), x1=px(Math.min(N-0.5, D.tpIdx+0.5)); ctx.globalAlpha=f;
+      ctx.fillStyle='rgba(255,77,77,0.14)'; ctx.fillRect(x0,py(D.entry),x1-x0,py(D.stop)-py(D.entry)); ctx.fillStyle='rgba(182,255,60,0.12)'; ctx.fillRect(x0,py(D.tp),x1-x0,py(D.entry)-py(D.tp));
+      [[D.stop,C.danger,`SL ${SIM2.price(D.stop)}`],[D.entry,C.text,`ENTRY ${SIM2.price(D.entry)}`],[D.tp,C.accent,`TP ${SIM2.price(D.tp)}  ${D.rr.toFixed(1)}R`]].forEach(([p,col,lab])=>{ ctx.strokeStyle=col; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x0,py(p)); ctx.lineTo(x1,py(p)); ctx.stroke(); text(lab,x1-6,py(p)-6,`700 13px ${MONO}`,col,'right'); });
+      ctx.globalAlpha=1; } }
+  // sign stamp
+  { const f=fade(t,tSign,0.25); if(f){ ctx.globalAlpha=f*(1-sst(tSign+2.2,tSign+3.0,t)); const x=px(D.stageIdx-8), y=py(D.leg.hi)-4; ctx.strokeStyle=C.accent; ctx.lineWidth=3; ctx.strokeRect(x-8,y-30,196,44); text('SIGNED BY YOU',x+90,y-2,`700 20px ${MONO}`,C.accent,'center'); ctx.globalAlpha=1; } }
+  // price tag at head
+  { const c=CD[Math.min(hi,N-1)], cl=c.o+(c.c-c.o)*(hi<N?fr:1), y=py(cl); ctx.fillStyle=C.text; ctx.fillRect(R.x+R.w-ax+2,y-11,ax-6,22); text(SIM2.price(Math.round(cl*10)/10),R.x+R.w-ax/2,y+5,`700 14px ${MONO}`,C.ground,'center'); }
+  ctx.restore();
+  return head;
+}
+
+// ---- panels ----------------------------------------------------------------------
+function checklist(t){ const r=LY.p.check, done=CHECKS.filter(c=>t>=c[1]).length; panel(r,'SCAN CHECKLIST  '+PB.name+' '+PB.version,`${done}/6`,done===6?C.accent:C.muted);
+  const rh=(r.h-44)/6; CHECKS.forEach((c,i)=>{ const y=r.y+44+i*rh, ok=t>=c[1], act=!ok&&(i===0||t>=CHECKS[i-1][1]); const f=ok?fade(t,c[1],0.3):0;
+    ctx.strokeStyle=ok?C.accent:(act?C.text:C.dim); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(r.x+24,y+rh/2-2,8,0,Math.PI*2); ctx.stroke();
+    if(ok){ ctx.fillStyle=C.accent; ctx.globalAlpha=f; ctx.beginPath(); ctx.arc(r.x+24,y+rh/2-2,5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; }
+    text(c[0],r.x+44,y+rh/2+2,`700 15px ${MONO}`,ok?C.text:(act?C.muted:C.dim));
+    text(ok?c[2]:(act?'scanning...':'waiting'),r.x+r.w-14,y+rh/2+2,`600 13px ${MONO}`,ok?C.muted:C.dim,'right'); }); }
+
+function dial(t){ const r=LY.p.dial, head=SIM2.headAt(t), min=(SIM2.START_MIN+head*SIM2.TF)%1440; panel(r,'CLOCK  NY',SIM2.hm(head),C.text);
+  const cx=r.x+r.w/2, cy=r.y+r.h/2+14, R0=Math.min(r.w,r.h)/2-30, ang=m=>m/1440*Math.PI*2-Math.PI/2;
+  const arc=(m0,m1,col,w,al)=>{ ctx.globalAlpha=al; ctx.strokeStyle=col; ctx.lineWidth=w; ctx.beginPath(); ctx.arc(cx,cy,R0,ang(m0),ang(m1)); ctx.stroke(); ctx.globalAlpha=1; };
+  ctx.strokeStyle=C.line; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,R0,0,Math.PI*2); ctx.stroke();
+  for(let h=0;h<24;h++){ const a=ang(h*60), l=h%6===0?10:5; ctx.strokeStyle=C.dim; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*(R0+4),cy+Math.sin(a)*(R0+4)); ctx.lineTo(cx+Math.cos(a)*(R0+4+l),cy+Math.sin(a)*(R0+4+l)); ctx.stroke(); }
+  [[0,'00'],[6,'06'],[12,'12'],[18,'18']].forEach(([h,s])=>{ const a=ang(h*60); text(s,cx+Math.cos(a)*(R0+22),cy+Math.sin(a)*(R0+22)+4,`600 11px ${MONO}`,C.dim,'center'); });
+  const inAsia=min>=1200||min<0, inLon=min>=120&&min<300;
+  arc(1200,1440,C.ob,9,0.35+0.4*(min>=1200)); arc(120,300,C.accent,9,0.3+0.6*inLon); arc(420,600,C.reject,9,0.3);
+  const a=ang(min); ctx.strokeStyle=C.text; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*(R0-14),cy+Math.sin(a)*(R0-14)); ctx.stroke(); ctx.fillStyle=C.text; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
+  const lab=min>=1200?'ASIA':(inLon?'LONDON KZ':(min<120?'DEAD ZONE':'IDLE')); text(lab,cx,cy+R0*0.45,`700 12px ${MONO}`,inLon?C.accent:C.muted,'center'); }
+
+function card(t){ const r=LY.p.card, staged=t>=tStage, signed=t>=tSign; panel(r,'ORDER TICKET',signed?'SIGNED':(staged?'AWAITING YOU':'NO SETUP'),signed?C.accent:(staged?C.reject:C.dim));
+  const rows=[['SIDE','LONG'],['ENTRY',SIM2.price(D.entry)],['STOP',SIM2.price(D.stop)],['TARGET',SIM2.price(D.tp)],['R:R',D.rr.toFixed(1)]];
+  rows.forEach((rw,i)=>{ const y=r.y+54+i*((r.h-110)/5); text(rw[0],r.x+16,y,`600 14px ${MONO}`,C.muted); text(staged?rw[1]:'—',r.x+r.w-16,y,`700 17px ${MONO}`,staged?C.text:C.dim,'right'); });
+  const by=r.y+r.h-44, bw=(r.w-44)/2; ctx.lineWidth=2;
+  ctx.strokeStyle=staged&&!signed?C.accent:C.dim; ctx.fillStyle=signed?C.accent:'transparent'; ctx.fillRect(r.x+16,by,bw,32); ctx.strokeRect(r.x+16,by,bw,32);
+  text(signed?'SIGNED':'APPROVE',r.x+16+bw/2,by+22,`700 14px ${MONO}`,signed?C.ground:(staged?C.accent:C.dim),'center');
+  ctx.strokeStyle=C.dim; ctx.strokeRect(r.x+28+bw,by,bw,32); text('REJECT',r.x+28+bw+bw/2,by+22,`700 14px ${MONO}`,C.dim,'center'); }
+
+function logp(t){ const r=LY.p.log; const seen=EV.filter(e=>t>=e.t); panel(r,'SCAN LOG',`${seen.length} EVENTS`,C.muted);
+  const last=seen.slice(-5).reverse(); const rh=(r.h-48)/5;
+  last.forEach((e,i)=>{ const y=r.y+54+i*rh; ctx.globalAlpha=1-i*0.1; text(SIM2.hm(e.i),r.x+14,y,`600 14px ${MONO}`,C.muted); text(e.valid?'PASS':'SKIP',r.x+72,y,`700 14px ${MONO}`,e.valid?C.accent:C.reject);
+    text(e.text,r.x+130,y,`600 14px ${MONO}`,C.text); text(e.why,r.x+130,y+16,`600 11px ${MONO}`,C.muted); ctx.globalAlpha=1; }); }
+
+function meter(t){ const r=LY.p.meter, head=SIM2.headAt(t); let rr=null;
+  if(t>=tFill){ const c=CD[Math.min(Math.floor(head),N-1)], cl=c.o+(c.c-c.o)*(head-Math.floor(head)); rr=clamp((cl-D.entry)/D.risk,-1,D.rr); if(t>=tTP) rr=D.rr; }
+  panel(r,'OPEN RESULT','R',C.muted); text(rr===null?'--':`${rr>=0?'+':''}${rr.toFixed(2)}R`,r.x+r.w/2,r.y+r.h/2+12,`700 ${Math.round(r.w/6)}px ${MONO}`,rr===null?C.dim:(rr>=0?C.accent:C.danger),'center');
+  const bx=r.x+16,bw=r.w-32,by=r.y+r.h-34; ctx.fillStyle='#141b24'; ctx.fillRect(bx,by,bw,8); if(rr!==null){ ctx.fillStyle=rr>=0?C.accent:C.danger; ctx.fillRect(bx,by,bw*clamp(rr/D.rr,0,1),8); }
+  text('0R',bx,by+24,`600 12px ${MONO}`,C.muted); text(`${D.rr.toFixed(0)}R target`,bx+bw,by+24,`600 12px ${MONO}`,C.muted,'right'); }
+
+function unver(t){ const r=LY.p.unv; panel(r,'STILL UNVERIFIED','',C.muted); const items=[['news calendar','not checked'],['spread / slippage','assumed'],['HTF bias','manual'],['single backtest','1 sim day']];
+  items.forEach((it,i)=>{ const y=r.y+56+i*((r.h-70)/4); text(it[0],r.x+14,y,`600 14px ${MONO}`,C.text); text(it[1],r.x+14,y+16,`600 12px ${MONO}`,C.reject); }); }
+
+function captions(t){ for(const [a,b,lines] of SIM2.CAPTIONS){ if(t<a||t>=b) continue; ctx.globalAlpha=REDUCED?1:clamp(Math.min((t-a)/0.25,(b-t)/0.25),0,1);
+  lines.forEach((ln,i)=>{ const hl=(i===1&&lines.length===2)?C.accent:C.text; text(ln,LY.cap.x,LY.cap.y+LY.cap.fs+i*LY.cap.fs*1.2,`700 ${LY.cap.fs}px ${SANS}`,hl); }); ctx.globalAlpha=1; } }
+
+function frame(t){
+  ctx.globalAlpha=1; ctx.fillStyle=C.ground; ctx.fillRect(0,0,W,H);
+  text('AUTOMATION STUDIO  /  ICT DESK  /  '+PB.name+' '+PB.version,LY.bar.x,LY.bar.y+14,`600 15px ${MONO}`,C.muted);
+  text(`SIMULATED  ${t.toFixed(1).padStart(4,'0')}s`,W-30,LY.bar.y+14,`600 15px ${MONO}`,C.muted,'right');
+  chart(t); captions(t); checklist(t); dial(t); card(t); logp(t); meter(t); unver(t);
+  text('Simulated price data. Illustrates a rule set, not a recommendation. Not financial advice.',LY.foot.x,LY.foot.y,`600 13px ${MONO}`,C.muted);
+}
+window.TIMELINE = { duration: SIM2.DURATION, fps: 30, captions: SIM2.CAPTIONS,
+  cues: [], markers: {kz:tKZ, sweep:tSweep, mss:tMSS, fvg:tFVG, stage:tStage, sign:tSign, fill:tFill, tp:tTP, skip:T(D.sweeps[0].i+1)} };
+window.seek = t => { frame(t); return true; }; seek(0);
+if(q.get('play')==='1'){ const t0=performance.now(); (function l(){ seek(((performance.now()-t0)/1000)%SIM2.DURATION); requestAnimationFrame(l); })(); }
+</script></body></html>

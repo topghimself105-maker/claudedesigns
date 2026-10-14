@@ -1,0 +1,46 @@
+1
+00:00:00,300 --> 00:00:04,000
+ICT looks like art.
+A bot reads it as rules.
+
+2
+00:00:04,100 --> 00:00:06,400
+First: mark the liquidity.
+
+3
+00:00:06,500 --> 00:00:08,900
+Sweep outside the killzone? Skip.
+
+4
+00:00:09,000 --> 00:00:10,900
+London opens. The bot arms.
+
+5
+00:00:11,000 --> 00:00:12,100
+Stops swept. Price snaps back.
+
+6
+00:00:12,200 --> 00:00:13,400
+Structure shifts. Displacement.
+
+7
+00:00:13,500 --> 00:00:15,400
+Gap and retrace line up.
+
+8
+00:00:15,500 --> 00:00:16,900
+Bot stages the order.
+You sign.
+
+9
+00:00:17,000 --> 00:00:23,900
+Fixed risk. Target three R.
+
+10
+00:00:24,000 --> 00:00:28,000
+One trade. Six checks passed.
+
+11
+00:00:28,100 --> 00:00:32,000
+Never let the bot place the order.
+You sign.

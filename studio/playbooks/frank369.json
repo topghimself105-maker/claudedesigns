@@ -1,0 +1,6 @@
+{
+  "name": "Frank369",
+  "version": "TODO",
+  "note": "PLACEHOLDER. The studio does not know this method's rules and will not guess them. Send the rules (steps, timeframes, entry/stop/target logic, what invalidates a setup) and they become detectors in films/<name>/sim.js plus a film, the same way ict-london-sweep.json drives ict-desk.",
+  "steps": []
+}

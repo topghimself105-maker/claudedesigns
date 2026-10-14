@@ -10,7 +10,7 @@ const [film = 'signal-to-fill', layout = '1x1', reduced] = process.argv.slice(2)
 const tag = `${layout}${reduced ? '_reduced' : ''}`;
 const out = resolve(here, '../out'); mkdirSync(out, { recursive: true });
 const url = `file://${resolve(here, 'films', film, 'index.html')}?layout=${layout}${reduced ? '&reduced=1' : ''}`;
-const sizes = { '1x1': [1080, 1080], '9x16': [1080, 1920], '16x9': [1920, 1080] }, [W, H] = sizes[layout];
+const sizes = { '4x5': [1080, 1350], '1x1': [1080, 1080], '9x16': [1080, 1920], '16x9': [1920, 1080] }, [W, H] = sizes[layout];
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] }).catch(() => chromium.launch({ args: ['--no-sandbox'] }));
 const page = await (await browser.newContext({ viewport: { width: W, height: H } })).newPage();

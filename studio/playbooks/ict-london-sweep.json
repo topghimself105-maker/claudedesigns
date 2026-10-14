@@ -1,0 +1,15 @@
+{
+  "name": "ICT · London Sweep",
+  "version": "v0",
+  "note": "Rule set used by the ict-desk scanner. Parameters mirror PLAYBOOK in films/ict-desk/sim.js. Conventions are common ICT teaching, not a guarantee of edge.",
+  "session": { "tz": "America/New_York", "killzone": "02:00-05:00", "range": "Asia 20:00-00:00" },
+  "steps": [
+    { "id": "killzone",  "rule": "setup must complete inside the killzone" },
+    { "id": "liquidity", "rule": "equal highs/lows (tolerance 1.5 pts) mark BSL/SSL pools; previous-day high is the target" },
+    { "id": "sweep",     "rule": "wick trades through the pool and the candle closes back inside" },
+    { "id": "structure", "rule": "within 6 candles a displacement candle (body >= 1.8x avg) closes through the last swing = MSS" },
+    { "id": "fvg_ote",   "rule": "3-candle gap left by the displacement overlaps the 62-79% retrace of the leg; limit entry at the overlap midpoint" },
+    { "id": "risk",      "rule": "stop = sweep extreme - 3 pts; risk 0.5% of account; target previous-day high" }
+  ],
+  "human_gate": "The scanner stages an order ticket. A person must sign. The bot never places the order."
+}
