@@ -1,0 +1,33 @@
+1
+00:00:00,300 --> 00:00:03,200
+Your bot just saw hundreds of signals.
+
+2
+00:00:03,300 --> 00:00:06,800
+Every one meets the same gates.
+
+3
+00:00:06,900 --> 00:00:11,000
+Signal. Filter. Risk gate. Execute.
+
+4
+00:00:11,100 --> 00:00:18,800
+Most die at the filter.
+Half of the rest, at risk.
+
+5
+00:00:18,900 --> 00:00:20,900
+Rejected is the bot doing its job.
+
+6
+00:00:21,000 --> 00:00:24,800
+Now switch the risk gate off.
+
+7
+00:00:24,900 --> 00:00:27,400
+More trades. Bigger size. Drawdown.
+
+8
+00:00:27,500 --> 00:00:31,000
+Gate back on.
+The edge is what it refuses.
