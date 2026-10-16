@@ -55,6 +55,7 @@
   }
 
   // ---- time validity: 90-minute cycles, 3 per session (London, New York), none for Asia -------------------------------
+  function digits369(i) { const m = (START_MIN + i * TF) % 1440, hh = Math.floor(m / 60), mm = m % 60, d = [Math.floor(hh/10), hh%10, Math.floor(mm/10), mm%10]; const sum = d.reduce((a, b) => a + b, 0); let root = sum; while (root > 9) root = String(root).split('').reduce((a, b) => a + +b, 0); return { d, sum, root, ok: root === 3 || root === 6 || root === 9 }; }
   function windowAt(i) { const m = (START_MIN + i * TF) % 1440;
     for (const [open, name] of RULES.sessions) { const since = m - open; if (since >= 0 && since < RULES.cycleMin * RULES.cycles) return { ok: true, ses: name, cyc: Math.floor(since / RULES.cycleMin) + 1, since }; }
     return { ok: false, ses: m >= 1200 || m < 0 ? 'ASIA' : '--', cyc: 0, since: 0 }; }
@@ -89,8 +90,8 @@
           s.entry = Math.round(s.fvg.mid); s.stop = Math.round(s.ext - P.stopBuf); s.risk = s.entry - s.stop; s.tp = s.entry + P.rr * s.risk; s.rr = (s.tp - s.entry) / s.risk;
           s.fill = (() => { for (let j = lh + 1; j < N; j++) if (C[j].l <= s.entry) return j; })();
           s.tpIdx = (() => { for (let j = s.fill; j < N; j++) { if (C[j].l <= s.stop) return -1; if (C[j].h >= s.tp) return j; } return -1; })();
-          s.win = windowAt(s.sweep);
-          s.chain = [s.win.ok, true, true, true, s.csd != null, s.disp != null, s.mss != null, !!(s.fvg && s.fvg.discount), true, s.tpIdx > 0];
+          s.win = windowAt(s.sweep); s.t369 = digits369(s.sweep);
+          s.chain = [s.win.ok && s.t369.ok, true, true, true, s.csd != null, s.disp != null, s.mss != null, !!(s.fvg && s.fvg.discount), true, s.tpIdx > 0];
           s.take = s.chain.every(Boolean);
         }
         if (s.mss != null && s.fvg) out.setups.push(s); break;
@@ -104,6 +105,6 @@
     if (s) { const risk$ = P.equity * P.risk, perPt = risk$ / s.risk, contracts = Math.floor(perPt / P.ptValue); out.math = { equity: P.equity, riskPct: P.risk, riskUsd: risk$, entry: s.entry, stop: s.stop, tp: s.tp, risk: s.risk, perPt, contractsRaw: perPt / P.ptValue, contracts, actualRisk: contracts * s.risk * P.ptValue, rr: s.rr }; }
     return out;
   }
-  const api = { rng, candles, detect, windowAt, hm, price, N, START_MIN, TF, RULES };
+  const api = { rng, candles, detect, windowAt, digits369, hm, price, N, START_MIN, TF, RULES };
   if (typeof module !== 'undefined') module.exports = api; else root.SIM3 = api;
 })(typeof window !== 'undefined' ? window : globalThis);
