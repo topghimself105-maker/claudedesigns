@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>F369 engine</title>
+<style>html,body{margin:0;background:#040907;height:100%}canvas{display:block;margin:0 auto;max-width:100vw;max-height:100vh}</style></head>
+<body><canvas id="c"></canvas>
+<script src="sim.js"></script>
+<script>
+// F369 engine: how the engine reads the market. 45 s, locked to a 128 bpm grid (1 bar = 1.875 s, drop at bar 15 = 28.125 s).
+// ?layout=9x16|4x5|16x9  ?reduced=1  ?t=12  ?play=1   Every frame is a pure function of t.
+const q=new URLSearchParams(location.search),LAYOUT=q.get('layout')||'9x16',REDUCED=q.get('reduced')==='1';
+const SIZES={'9x16':[1080,1920],'4x5':[1080,1350],'16x9':[1920,1080]},[W,H]=SIZES[LAYOUT],TAU=Math.PI*2;
+const cv=document.getElementById('c');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
+const D=45,FPS=60,BEAT=60/128,BAR=BEAT*4;
+const K={bg:'#040907',panel:'#07100c',line:'#15251d',hair:'#1c3027',grid:'#2a4337',dim:'#58786a',mu:'#8fb5a4',tx:'#d8efe6',w:'#f2fbf7',mint:'#66f2c0',up:'#3ea87c',dn:'#c25a50',
+  ag:{GENERAL:'#7bd96f',LIVE:'#e5625a',BACKTEST:'#5b8cff',RESEARCH:'#a98bff',DATA:'#2fcf9a'}};
+const MONO='"DejaVu Sans Mono", monospace',SANS='"Inter", sans-serif',LIGHT='"Inter Display", "Inter", sans-serif';
+const mod=(x,m)=>((x%m)+m)%m,clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),lerp=(a,b,t)=>a+(b-a)*t,sst=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+function hash(a,b){let x=(Math.imul(a|0,374761393)+Math.imul((b|0)+7919,668265263))|0;x=Math.imul(x^(x>>>13),1274126177);x^=x>>>16;return (x>>>0)/4294967296;}
+const R=(a,b)=>hash(a,b),hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`;};
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+
+// ---------- data ----------
+const C=SIM3.candles(),DT=SIM3.detect(C),SA=DT.setups[0],SB=DT.setups[1],MATH=DT.math,N=SIM3.N;
+const rad=p=>270+(p-21360)*.82,ang=i=>-Math.PI/2+(i+.5)*TAU/N,POS=(i,p)=>[rad(p)*Math.cos(ang(i)),rad(p)*Math.sin(ang(i))];
+const hmm=i=>SIM3.hm(i);
+
+// ---------- timeline (all on the beat grid) ----------
+const bt=b=>b*BEAT,bar=k=>k*BAR;
+const PLATES=[[0,bar(5),'THE DIAL','DIAL'],[bar(5),bar(11),'THE LEDGER','LEDGER'],[bar(11),bar(20),'THE CORE','CORE'],[bar(20),D,'THE ANSWER','ANSWER']];
+const T_WIN=bar(11),T_SWEEP=bt(50),T_CSD=bt(53),T_DISP=bt(55),T_MSS=bt(55.5),T_FVG=bt(57),T_ARM=bt(59),T_DROP=bar(15),T_FILL=bt(62),T_TP=bt(70),T_TURN=bt(70.2),T_BSWEEP=bt(75),T_BCSD=bt(77),T_BMSS=bt(78),T_SKIP=bt(79.5),T_END=bar(22.5);
+const STMT=[
+ [.3,bar(3),'YOUR QUESTION',['Bad luck, or liquidity?']],
+ [bar(3),bar(5),'WHERE STOPS REST',['Orders rest above highs','and below lows.']],
+ [bar(5),bar(8),'THE TEN STEPS',['Ten checks.','No discretion.']],
+ [bar(8),bar(11),'PD ARRAYS',['Buy from discount.','Sell from premium.']],
+ [bar(11),bar(15),'ONE ENGINE · FIVE AGENTS',['The agents run','the chain live.']],
+ [bar(15),T_TURN,'ORDER PLACED',['Stop beyond the sweep.','Target 5R.']],
+ [T_TURN,bar(20),'SAME SWEEP · OUTSIDE THE WINDOW',['The algo skips it.']],
+ [bar(20),T_END,'THE ANSWER',['Not luck.','A rule chain.']]];
+// ledger: ten steps; pass time in the live run (A) and in the skip run (B)
+const STEPS=[['F369 TIME','90m cycle valid'],['DEALING RANGE','swing high to low · 50% = EQ'],['POOLS','BSL / SSL marked'],['SSL SWEPT','wick through, close back inside'],['CSD','change in state of delivery'],['DISPLACEMENT','body ≥ 1.8× average'],['MSS','close through swing high'],['DISCOUNT PD ARRAY','FVG / OB / breaker below EQ'],['ORDER','0.5% risk · stop beyond sweep'],['TARGET','opposing BSL · 5 RR']];
+const PASS_A=[T_WIN,T_WIN+BEAT,T_WIN+BEAT*1.5,T_SWEEP,T_CSD,T_DISP,T_MSS,T_FVG,T_DROP,T_DROP+BEAT*.5];
+const PASS_B=[null,T_TURN+BEAT*.5,T_TURN+BEAT*1.0,T_BSWEEP,T_BCSD,T_BCSD+BEAT*.5,T_BMSS,T_BMSS+BEAT,null,null];
+const P2_CHECK=i=>bar(5)+BEAT*(2+i*1.2);            // dry pass in the ledger plate, one check per beat or so
+const plateAt=t=>{for(let i=3;i>=0;i--)if(t>=PLATES[i][0])return i;return 0;};
+const kick=t=>{const b=t/BEAT;return Math.exp(-mod(b,1)*5.5);};
+const energy=t=>t<bar(6)?.25:t<T_DROP-.5?.55:t<T_DROP?.2:1;   // how loud the track is (low band): build, silence before the drop, full
+
+// ---------- layout ----------
+const LY=(()=>{if(LAYOUT==='9x16')return{scene:{x:0,y:132,w:1080,h:1236},stmt:{lx:44,ly:1414,y:1482,fs:66,lh:70},lower:{x:15,y:1606,w:1050,h:282},grid:[4,2],disc:1908,bar:{x:40,y:46}};
+ if(LAYOUT==='4x5')return{scene:{x:0,y:116,w:1080,h:760},stmt:{lx:44,ly:908,y:960,fs:48,lh:50},lower:{x:15,y:1054,w:1050,h:262},grid:[4,2],disc:1338,bar:{x:40,y:46}};
+ return{scene:{x:0,y:104,w:1250,h:830},stmt:{lx:50,ly:962,y:1010,fs:44,lh:48},lower:{x:1262,y:116,w:643,h:930},grid:[2,4],disc:1066,bar:{x:50,y:46}};})();
+const SC=LY.scene,SCX=SC.x+SC.w/2,SCY=SC.y+SC.h/2,DR=655,SF=Math.min(SC.w,SC.h)/(2*DR)*1.04;
+const panelRect=i=>{const [cols,rows]=LY.grid,L=LY.lower,g=8,w=(L.w-g*(cols-1))/cols,h=(L.h-g*(rows-1))/rows;return{x:L.x+(i%cols)*(w+g),y:L.y+Math.floor(i/cols)*(h+g),w,h};};
+
+// ---------- camera: one continuous move. Focused views rotate the dial so the focus points up and price reads upward. ----------
+const FOC=(i,p,z,rotExtra)=>{const [x,y]=POS(i,p);return[z,x,y,-Math.PI/2-ang(i)+(rotExtra||0)];};
+const KEYS=[[0.0,...FOC(101,21378,3.4)],[bar(2),...FOC(101,21392,3.0)],[bar(4),...FOC(113,21430,1.9)],[bar(5),1.04,0,0,0],[bar(6.5),1.06,0,0,-.09],[bar(8),...FOC(106,21425,1.55)],[bar(10),1.08,0,0,-.18],[T_WIN,1.1,0,0,-.18],
+ [T_WIN+bar(.7),3.5,0,0,0],[bt(48),...FOC(101,21395,2.9)],[bt(53),...FOC(103,21400,3.0)],[bt(56.5),...FOC(106,21418,2.8)],[T_DROP,.84,0,0,0],[bt(63),...FOC(112,21470,2.3)],[T_TP,...FOC(128,21585,2.2)],[T_TP+.5,1.25,0,0,-3.2],
+ [bt(74),...FOC(224,21535,2.6)],[bt(79),...FOC(228,21566,2.5)],[bar(20)+.2,1.5,0,0,-3.2],[bar(21.3),1.04,0,0,0],[D,1.04,0,0,.03]];
+function cam(t){if(REDUCED){return{z:1.15,fx:0,fy:0,rot:0};}for(let k=1;k<KEYS.length;k++){if(t<=KEYS[k][0]){const a=KEYS[k-1],b=KEYS[k],u=sst(a[0],b[0],t);let r0=a[4],r1=b[4];while(r1-r0>Math.PI)r1-=TAU;while(r1-r0<-Math.PI)r1+=TAU;return{z:lerp(a[1],b[1],u),fx:lerp(a[2],b[2],u),fy:lerp(a[3],b[3],u),rot:lerp(r0,r1,u)};}}const l=KEYS[KEYS.length-1];return{z:l[1],fx:l[2],fy:l[3],rot:l[4]};}
+function toScreen(t,x,y){const c=cam(t),dx=x-c.fx,dy=y-c.fy,co=Math.cos(c.rot),si=Math.sin(c.rot),s=SF*c.z;return[SCX+s*(dx*co-dy*si),SCY+s*(dx*si+dy*co)];}
+
+// ---------- state helpers ----------
+const headAt=t=>{ // live head (candle index) during the core plate; the full day otherwise
+  const K2=[[T_WIN,94],[T_SWEEP,102],[T_CSD,104],[T_DISP+BEAT*.5,105],[T_FVG,106],[T_ARM,107.5],[T_DROP,108],[T_FILL,111],[T_TP,129.5],[T_TURN-.001,129.5],[T_TURN,216],[bt(73.5),221],[T_BSWEEP,225],[T_BCSD,227],[T_BMSS,228],[T_SKIP,230.5],[bar(20),232]];
+  if(t<T_WIN-bar(.35))return N;if(t<T_WIN)return lerp(N,94,sst(T_WIN-bar(.35),T_WIN,t));if(t>=bar(20)){return lerp(232,N,sst(bar(20),bar(21.5),t));}
+  for(let k=1;k<K2.length;k++)if(t<=K2[k][0]){const a=K2[k-1],b=K2[k];return lerp(a[1],b[1],(t-a[0])/Math.max(1e-6,b[0]-a[0]));}return 232;};
+const handAt=t=>{const p=plateAt(t);if(p===0)return 101.5;if(p===1)return lerp(60,287,sst(bar(5),bar(11),t));if(p===2)return headAt(t);return lerp(headAt(bar(20)),101.5,sst(bar(20),bar(23),t));};
+const activity=t=>{ // radial burst strength
+  let a=.22+.25*energy(t);const ev=[T_SWEEP,T_CSD,T_MSS,T_FVG,T_FILL,T_BSWEEP,T_BMSS];for(const e of ev){const d=t-e;if(d>=0&&d<1.6)a+=.35*Math.exp(-d/.5);}
+  const d=t-T_DROP;if(d>=0)a+=1.4*Math.exp(-d/1.3);if(t>=T_DROP-bar(.9)&&t<T_DROP)a+=.9*sst(T_DROP-bar(.9),T_DROP,t)*.5;return a;};
+
+// ---------- drawing helpers ----------
+function tx(s,x,y,sz,col,al,wt,fam,ls){ctx.font=`${wt||400} ${sz}px ${fam||MONO}`;ctx.fillStyle=col;ctx.textAlign=al||'left';ctx.textBaseline='alphabetic';if(ls&&ctx.letterSpacing!==undefined)ctx.letterSpacing=ls;ctx.fillText(s,x,y);if(ls&&ctx.letterSpacing!==undefined)ctx.letterSpacing='0px';}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+const ring=(r,a0,a1)=>{ctx.beginPath();ctx.arc(0,0,r,a0===undefined?0:a0,a1===undefined?TAU:a1);};
+function sector(i0,i1,r0,r1){ctx.beginPath();const a0=-Math.PI/2+i0*TAU/N,a1=-Math.PI/2+i1*TAU/N;ctx.arc(0,0,r1,a0,a1);ctx.arc(0,0,r0,a1,a0,true);ctx.closePath();}
+const spr=c=>{const s=64,o=document.createElement('canvas');o.width=o.height=s;const g=o.getContext('2d'),r=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);r.addColorStop(0,`rgba(${c},1)`);r.addColorStop(.25,`rgba(${c},.5)`);r.addColorStop(1,`rgba(${c},0)`);g.fillStyle=r;g.fillRect(0,0,s,s);return o;};
+const SPR={GENERAL:spr('123,217,111'),LIVE:spr('229,98,90'),BACKTEST:spr('91,140,255'),RESEARCH:spr('169,139,255'),DATA:spr('47,207,154'),mint:spr('102,242,192')};
+const glow=(k,x,y,r,a)=>{ctx.globalAlpha=clamp(a,0,1);ctx.drawImage(SPR[k],x-r,y-r,2*r,2*r);ctx.globalAlpha=1;};
+
+// ---------- the dial (design units, origin = dial centre) ----------
+function dial(t){
+  const c=cam(t),act=activity(t),head=headAt(t),hand=handAt(t),pl=plateAt(t),coreMode=pl===2;
+  ctx.save();ctx.beginPath();ctx.rect(SC.x,SC.y,SC.w,SC.h);ctx.clip();
+  ctx.translate(SCX,SCY);ctx.scale(SF*c.z,SF*c.z);ctx.rotate(c.rot);ctx.translate(-c.fx,-c.fy);
+  const lw=1/(SF*c.z);                                            // keeps hairlines about one device pixel at any zoom
+  ctx.lineWidth=lw;
+  // streak burst: candle-wick style, green / red, grows with activity
+  for(let i=0;i<1900;i++){const a=R(i,1)*TAU,r0=640+R(i,2)*8,L=18+Math.pow(R(i,3),2.0)*340*(.45+act*1.1),sh=.55+.45*Math.sin(TAU*(1+Math.floor(R(i,4)*3))*t/D*3+R(i,5)*TAU),up=R(i,6)<.52;
+    ctx.strokeStyle=hexA(up?K.up:K.dn,clamp((.09+.34*R(i,7)*sh)*(.6+act*.7),0,.9));ctx.lineWidth=(R(i,8)<.1?2.2:1)*lw*1.3;ctx.beginPath();ctx.moveTo(Math.cos(a)*r0,Math.sin(a)*r0);ctx.lineTo(Math.cos(a)*(r0+L),Math.sin(a)*(r0+L));ctx.stroke();}
+  ctx.lineWidth=lw;
+  // hairline structure: radial lines, rings, dashed rings
+  ctx.strokeStyle=hexA(K.grid,.5);for(let d=0;d<72;d++){const a=d*TAU/72,r0=d%6===0?96:118;ctx.beginPath();ctx.moveTo(Math.cos(a)*r0,Math.sin(a)*r0);ctx.lineTo(Math.cos(a)*(d%6===0?548:318),Math.sin(a)*(d%6===0?548:318));ctx.globalAlpha=d%6===0?.35:.12;ctx.stroke();}ctx.globalAlpha=1;
+  [[96,.5,0],[142,.3,0],[190,.35,1],[240,.3,0],[290,.3,1],[316,.6,0],[540,.5,1],[548,.9,0]].forEach(([r,a,d])=>{ctx.strokeStyle=hexA(K.grid,a);ctx.setLineDash(d?[3*lw*4,5*lw*4]:[]);ring(r);ctx.stroke();});ctx.setLineDash([]);
+  // price rings with labels along the 3 o'clock radius
+  [[21380,'21,380 SSL'],[21400,'21,400'],[21430,'21,430 BSL'],[21500,'21,500'],[21596,'21,596 PDH'],[21690,'21,690']].forEach(([p,l])=>{const r=rad(p);ctx.strokeStyle=hexA(K.grid,.22);ring(r);ctx.stroke();tx(l,r+3,-2,7.5,K.dim);});
+  // scale ring: ticks every 5 min, hour numbers, session arcs with 90-minute cycle marks (London and New York only)
+  for(let i=0;i<N;i++){const a=ang(i)-TAU/N/2,hr=i%12===0,r0=548,r1=hr?562:552;ctx.strokeStyle=hexA(K.mu,hr?.7:.3);ctx.beginPath();ctx.moveTo(Math.cos(a)*r0,Math.sin(a)*r0);ctx.lineTo(Math.cos(a)*r1,Math.sin(a)*r1);ctx.stroke();
+    if(hr){ctx.save();ctx.rotate(a+Math.PI/2);tx(String((18+i/12)%24).padStart(2,'0'),0,-570,8,K.dim,'center');ctx.restore();}}
+  const SES=[['ASIA',24,72,K.dim,0],['LDN',96,150,K.mint,3],['NY',156,210,K.mint,3]];
+  SES.forEach(([nm,i0,i1,col,cyc])=>{const live=hand>=i0&&hand<i1;ctx.strokeStyle=hexA(col,live?.95:.45);ctx.lineWidth=(live?2.4:1.2)*lw;ring(580,-Math.PI/2+i0*TAU/N,-Math.PI/2+i1*TAU/N);ctx.stroke();ctx.lineWidth=lw;
+    const am=-Math.PI/2+(i0+i1)/2*TAU/N;ctx.save();ctx.rotate(am+Math.PI/2);tx(nm+(cyc?'  3 × 90M':'  NO CYCLES'),0,-592,8.5,live?K.mint:K.dim,'center',700);ctx.restore();
+    for(let k=0;k<=cyc;k++){const ii=i0+k*18,a=-Math.PI/2+ii*TAU/N;ctx.strokeStyle=hexA(col,.8);ctx.beginPath();ctx.moveTo(Math.cos(a)*574,Math.sin(a)*574);ctx.lineTo(Math.cos(a)*588,Math.sin(a)*588);ctx.stroke();
+      if(k<cyc){const c1=live&&hand>=ii&&hand<ii+18;if(c1){ctx.fillStyle=hexA(K.mint,.18);sector(ii,ii+18,574,588);ctx.fill();}const am2=-Math.PI/2+(ii+9)*TAU/N;ctx.save();ctx.rotate(am2+Math.PI/2);tx('C'+(k+1),0,-562.5,7,c1?K.mint:K.dim,'center',c1?700:400);ctx.restore();}}});
+  // segmented outer ring with dot-matrix cells
+  for(let s=0;s<24;s++){const i0=s*12,a0=-Math.PI/2+i0*TAU/N+.004,a1=-Math.PI/2+(i0+12)*TAU/N-.004;ctx.strokeStyle=hexA(K.grid,.8);ring(610,a0,a1);ctx.stroke();ring(638,a0,a1);ctx.stroke();ctx.strokeStyle=hexA(K.grid,.45);ring(624,a0,a1);ctx.stroke();
+    const tk=Math.floor(t*5+s);for(let cI=0;cI<8;cI++)for(let rI=0;rI<4;rI++){const aa=a0+(a1-a0)*(cI+.5)/8,rr_=614+rI*5.6,on=R(s*18+cI*3+rI,tk)<.38+.3*act;ctx.fillStyle=on?hexA(R(s,cI)<.12?K.mint:K.mu,.85):hexA(K.grid,.5);ctx.fillRect(Math.cos(aa)*rr_-1.2,Math.sin(aa)*rr_-1.2,2.4,2.4);}}
+  // ink-level detail: segmented arcs, small labelled node markers on the inner rings, a drop shockwave
+  [[150,.0,.9,3.2],[198,1.2,.6,2.4],[246,.4,.7,2.0]].forEach(([r,a0,len,w],k)=>{const rot=a0+t*(.04+k*.015)*(k%2?-1:1);ctx.strokeStyle=hexA(K.mint,.35);ctx.lineWidth=w*lw*3;ring(r,rot,rot+len);ctx.stroke();ctx.lineWidth=lw;ctx.strokeStyle=hexA(K.mu,.35);ring(r,rot+len+.15,rot+len+.15+len*.5);ctx.stroke();});
+  for(let i=0;i<26;i++){const r=[142,190,240][i%3],a=R(i,41)*TAU+t*.02*((i%2)?-1:1),x=Math.cos(a)*r,y=Math.sin(a)*r;ctx.fillStyle=hexA(R(i,42)<.2?K.mint:K.mu,.8);ctx.fillRect(x-1.8,y-1.8,3.6,3.6);ctx.save();ctx.translate(x,y);ctx.rotate(-c.rot);tx(`n${String(i).padStart(2,'0')} ${(R(i,43)).toFixed(2)}`,5,2.5,5.6,hexA(K.dim,.9),'left');ctx.restore();}
+  { const sd=t-T_DROP; if(sd>=0&&sd<1.3){const k=sd/1.3;ctx.strokeStyle=hexA(K.mint,(1-k)*.9);ctx.lineWidth=lw*(5*(1-k)+1);ring(100+k*620);ctx.stroke();ctx.strokeStyle=hexA(K.w,(1-k)*.5);ctx.lineWidth=lw*1.2;ring(100+k*480);ctx.stroke();ctx.lineWidth=lw;} }
+  // candles
+  const fut=coreMode?.1:1;
+  for(let i=0;i<N;i++){const cd=C[i],a=ang(i),ca=Math.cos(a),sa=Math.sin(a),up=cd.c>=cd.o,col=up?K.up:K.dn,future=i>=head,al=future?(coreMode?.07:1):1;
+    const rl=rad(cd.l),rh=rad(cd.h),ro=rad(cd.o),rc=rad(cd.c);ctx.globalAlpha=al;ctx.strokeStyle=col;ctx.lineWidth=lw*1.1;ctx.beginPath();ctx.moveTo(ca*rl,sa*rl);ctx.lineTo(ca*rh,sa*rh);ctx.stroke();
+    ctx.lineWidth=Math.max(lw*2,TAU*rad(21400)/N*.5);ctx.beginPath();ctx.moveTo(ca*Math.min(ro,rc),sa*Math.min(ro,rc));ctx.lineTo(ca*Math.max(ro,rc)+ca*.8,sa*Math.max(ro,rc)+sa*.8);ctx.stroke();ctx.globalAlpha=1;}
+  ctx.lineWidth=lw;
+  // liquidity pools as resting orders: dashed level arc + stacked order ticks beyond the level
+  const poolA=DT.ssl[0],poolB=DT.bsl[0],show1=sst(bar(2.4),bar(3.2),t);
+  const orders=(pool,side,vis)=>{if(vis<=0)return;const r=rad(pool.level),col=side>0?K.dn:K.mint;ctx.globalAlpha=vis;ctx.strokeStyle=hexA(col,.9);ctx.lineWidth=lw*1.4;ctx.setLineDash([lw*6,lw*5]);ring(r,ang(pool.a)-.01,ang(pool.b+60>N?N-1:pool.b+60));ctx.stroke();ctx.setLineDash([]);
+    const mid=(ang(pool.a)+ang(pool.b))/2;for(let k=0;k<14;k++){const a=ang(pool.a)+(ang(pool.b)-ang(pool.a))*k/13,off=(3+4*((k*7)%5))*(side>0?1:-1)*(1+.2*Math.sin(TAU*t*2+k));ctx.strokeStyle=hexA(col,.75);ctx.lineWidth=lw*2;ctx.beginPath();ctx.moveTo(Math.cos(a)*(r+side*3),Math.sin(a)*(r+side*3));ctx.lineTo(Math.cos(a)*(r+side*(3+Math.abs(off)*1.2)),Math.sin(a)*(r+side*(3+Math.abs(off)*1.2)));ctx.stroke();}
+    ctx.globalAlpha=1;ctx.lineWidth=lw;};
+  orders(poolA,-1,show1);orders(poolB,1,sst(bar(3.2),bar(4),t));
+  // the sweep candle: ring, label, and the level it took (sweep = wick through + close back inside; run = closes through and keeps going)
+  const sw=SA.sweep,swv=sst(.9,1.5,t)*(coreMode?(t>=T_SWEEP?1:0):1);
+  if(swv>0&&!(pl===3&&false)){const [x,y]=POS(sw,SA.ext),[x2,y2]=POS(sw,C[sw].c);glow('mint',x,y,16+8*Math.sin(TAU*t*1.2),swv*.9);ctx.strokeStyle=hexA(K.mint,swv);ctx.lineWidth=lw*1.5;ring.call(null,0);ctx.beginPath();ctx.arc(x,y,7,0,TAU);ctx.stroke();ctx.lineWidth=lw;}
+  // zones: dealing range (premium / discount around EQ), FVG, order block, trade lines, all from detection
+  const zv=coreMode?sst(T_FVG,T_FVG+.4,t):sst(bar(8),bar(8.8),t)+(pl===0?0:0)+(pl===3?1:0),zz=clamp(zv,0,1);
+  if(zz>0){ctx.globalAlpha=zz;ctx.fillStyle=hexA(K.dn,.08);sector(SA.leg.i-6,SA.fill+8,rad(SA.eq),rad(SA.leg.hi));ctx.fill();ctx.fillStyle=hexA(K.up,.09);sector(SA.leg.i-6,SA.fill+8,rad(SA.leg.lo),rad(SA.eq));ctx.fill();
+    ctx.strokeStyle=hexA(K.mu,.9);ctx.setLineDash([lw*4,lw*4]);ring(rad(SA.eq),ang(SA.leg.i-6),ang(SA.fill+8));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=hexA(K.mint,.22);sector(SA.fvg.i-1,SA.fill+1,rad(SA.fvg.lo),rad(SA.fvg.hi));ctx.fill();ctx.strokeStyle=hexA(K.mint,.9);sector(SA.fvg.i-1,SA.fill+1,rad(SA.fvg.lo),rad(SA.fvg.hi));ctx.stroke();
+    ctx.strokeStyle=hexA(K.w,.6);sector(SA.ob.i,SA.ob.i+1,rad(SA.ob.lo),rad(SA.ob.hi));ctx.stroke();ctx.globalAlpha=1;}
+  const tradeV=coreMode?sst(T_DROP,T_DROP+.4,t):(pl===3?1:0);
+  if(tradeV>0){ctx.globalAlpha=tradeV;[[SA.stop,K.dn,'SL'],[SA.entry,K.w,'ENTRY'],[SA.tp,K.mint,'TP 5R']].forEach(([p,col])=>{ctx.strokeStyle=hexA(col,.95);ctx.lineWidth=lw*1.6;ring(rad(p),ang(SA.fill),ang(Math.min(N-1,SA.tpIdx+6)));ctx.stroke();});ctx.globalAlpha=1;ctx.lineWidth=lw;}
+  // pool B and skipped setup markers in the turn
+  if(pl===2&&t>=T_TURN||pl===3){const v=pl===3?1:sst(T_TURN,T_TURN+.6,t);const [x,y]=POS(SB.sweep,SB.ext);ctx.globalAlpha=v;ctx.strokeStyle=hexA(K.dn,.95);ctx.lineWidth=lw*1.5;ctx.beginPath();ctx.arc(x,y,9,0,TAU);ctx.stroke();ctx.beginPath();ctx.moveTo(x-6,y-6);ctx.lineTo(x+6,y+6);ctx.moveTo(x+6,y-6);ctx.lineTo(x-6,y+6);ctx.stroke();ctx.globalAlpha=1;ctx.lineWidth=lw;}
+  // BSL run: closes through the level and keeps going (shown on the ring during the dial plate)
+  { const rn=DT.runs[0],v=sst(bar(3.6),bar(4.2),t)*(pl<2?1:(pl===3?1:0));if(rn&&v>0){const [x,y]=POS(rn.run,C[rn.run].c);ctx.globalAlpha=v;ctx.strokeStyle=hexA(K.dn,.95);ctx.lineWidth=lw*1.3;ctx.beginPath();ctx.arc(x,y,7,0,TAU);ctx.stroke();const [x0,y0]=POS(rn.run-2,rn.pool.level),[x1,y1]=POS(rn.run+4,C[Math.min(N-1,rn.run+4)].c);ctx.setLineDash([lw*3,lw*3]);ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;ctx.lineWidth=lw;} }
+  // inner structure: core, clock hand, agent spheres, data cards
+  ctx.strokeStyle=hexA(K.mint,.55);ctx.lineWidth=lw*1.2;const ha=ang(hand);ctx.beginPath();ctx.moveTo(Math.cos(ha)*60,Math.sin(ha)*60);ctx.lineTo(Math.cos(ha)*548,Math.sin(ha)*548);ctx.stroke();ctx.lineWidth=lw;
+  core(t,act,pl,hand,lw);cards(t,lw);nodes(t,lw);
+  ctx.restore();
+}
+function core(t,act,pl,hand,lw){const pulse=.55+.45*kick(t)*energy(t);ctx.fillStyle=hexA(K.mint,.04+.05*pulse);ring(96);ctx.fill();ctx.strokeStyle=hexA(K.mint,.6);ring(70);ctx.stroke();ctx.strokeStyle=hexA(K.mint,.25);ring(52+4*pulse);ctx.stroke();
+  ctx.save();ctx.rotate(-cam(t).rot);tx('F369',0,6,17,K.w,'center',700,SANS,'1px');tx(SIM3.hm(Math.floor(hand))+' NY',0,24,8,K.mu,'center');ctx.restore();
+  for(let d=0;d<360;d+=5){const a=d*Math.PI/180,l=d%30===0?9:4;ctx.strokeStyle=hexA(K.mint,d%30===0?.7:.3);ctx.beginPath();ctx.moveTo(Math.cos(a)*100,Math.sin(a)*100);ctx.lineTo(Math.cos(a)*(100+l),Math.sin(a)*(100+l));ctx.stroke();}
+  const AG=[['GENERAL',118,.31,.9],['LIVE',150,.47,.4],['BACKTEST',176,.37,.2],['RESEARCH',204,.29,.6],['DATA',228,.41,.1]];
+  const work=pl===2;const tgt={DATA:T_WIN,RESEARCH:T_SWEEP,BACKTEST:T_CSD,LIVE:T_DROP,GENERAL:T_ARM};
+  AG.forEach(([nm,r,w,ph])=>{const a=TAU*(w*t/ (REDUCED?4:1)*.5+ph)+0,x=Math.cos(a)*r,y=Math.sin(a)*r*.72;ctx.strokeStyle=hexA(K.grid,.4);ctx.setLineDash([lw*2,lw*4]);ctx.beginPath();ctx.ellipse(0,0,r,r*.72,0,0,TAU);ctx.stroke();ctx.setLineDash([]);
+    const on=work&&t>=tgt[nm]&&t<tgt[nm]+2.4||(pl===2&&nm==='LIVE'&&t>=T_DROP&&t<T_TP),pulse2=on?1+.5*kick(t):1;glow(nm,x,y,15*pulse2,on?1:.7);ctx.fillStyle=K.ag[nm];ctx.beginPath();ctx.arc(x,y,4.2,0,TAU);ctx.fill();
+    if(pl===2||pl===1){ctx.save();ctx.translate(x,y);ctx.rotate(-cam(t).rot);tx(nm,9,3,6.8,hexA(K.ag[nm],.95),'left',700);ctx.restore();}
+    if(on){const tgtPos=nm==='DATA'?POS(94,21390):nm==='RESEARCH'?POS(101,SA.ext):nm==='BACKTEST'?POS(103,21395):nm==='LIVE'?POS(110,SA.entry):POS(106,21420);ctx.strokeStyle=hexA(K.ag[nm],.55);ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(tgtPos[0],tgtPos[1]);ctx.stroke();}});}
+// ruled data cards that slide along an inner ring; content depends on the plate and is always real data
+function cards(t,lw){const pl=plateAt(t),defs=[];const P=SIM3.price;
+  if(pl===0){defs.push(['SWEEP',[`level ${P(Math.round(DT.ssl[0].level))}`,`wick ${P(SA.ext)}`,`close ${P(C[SA.sweep].c)} back in`],bar(1.1),0]);defs.push(['RUN',[`level ${P(Math.round(DT.bsl[0].level))}`,`close ${P(C[DT.runs[0].run].c)} through`,'keeps going'],bar(3.7),1]);}
+  if(pl===1&&t<bar(8.2))defs.push(['DEALING RANGE',[`low ${P(SA.leg.lo)} high ${P(SA.leg.hi)}`,`EQ 50% = ${P(SA.eq)}`,'above premium · below discount'],bar(6.2),0]);
+  if(pl===1&&t>=bar(8)){defs.push(['FVG',[`gap ${P(SA.fvg.lo)} to ${P(SA.fvg.hi)}`,'3-candle imbalance','wick 1 to wick 3'],bar(8.1),0]);defs.push(['ORDER BLOCK',[`${P(SA.ob.lo)} to ${P(SA.ob.hi)}`,'last opposite candle','before displacement'],bar(9),1]);defs.push(['BREAKER · BPR',['failed OB flips role','overlapping opposing FVGs','= balanced price range'],bar(9.8),2]);}
+  if(pl===2){defs.push(['SSL SWEPT',[`${P(Math.round(DT.ssl[0].level))} → ${P(SA.ext)}`,`wick ${Math.round(DT.ssl[0].level-SA.ext)} pts`,'close back inside'],T_SWEEP,0]);defs.push(['CSD + MSS',[`close ${P(C[SA.csd].c)} > ${P(SA.csdLevel)}`,`close ${P(C[SA.mss].c)} > ${P(C[SA.swingHigh].h)}`,'delivery flipped'],T_CSD,1]);defs.push(['FVG · DISCOUNT',[`${P(SA.fvg.lo)} to ${P(SA.fvg.hi)}`,`EQ ${P(SA.eq)}`,`entry ${P(SA.entry)}`],T_FVG,2]);defs.push(['ORDER PLACED',[`limit ${P(SA.entry)} · stop ${P(SA.stop)}`,`target ${P(SA.tp)} · ${MATH.rr.toFixed(0)}R`,`${MATH.contracts} MNQ · risk $${fmt(MATH.actualRisk)}`],T_DROP+.1,0]);defs.push(['SKIP · NO ORDER',['12:40 NY · outside 90m cycle','sweep ✓ csd ✓ mss ✓ fvg ✓','f369 time ✗ → skip'],T_SKIP-.2,1]);}
+  if(pl===3&&t<bar(22))defs.push(['PD ARRAY',['buy discount only','sell premium only','algo picks one'],bar(20.5),0]);
+  defs.forEach(([title,rows,t0,slot])=>{const v=sst(t0,t0+.4,t)*(1-sst(t0+(title==='ORDER PLACED'||title==='SKIP · NO ORDER'?5.5:4.2),t0+(title==='ORDER PLACED'||title==='SKIP · NO ORDER'?6.1:4.8),t));if(v<=0.01)return;const ph=TAU*(.18+slot*.33)+t*.05,R_=200,x=Math.cos(ph)*R_,y=Math.sin(ph)*R_*.85,w=150,h=58;
+    ctx.save();ctx.globalAlpha=v;ctx.translate(x,y);ctx.rotate(-cam(t).rot);ctx.fillStyle='rgba(4,9,7,.92)';ctx.fillRect(-w/2,-h/2,w,h);ctx.strokeStyle=hexA(K.mint,.7);ctx.lineWidth=lw*1.1;ctx.strokeRect(-w/2,-h/2,w,h);ctx.fillStyle=hexA(K.mint,.9);ctx.fillRect(-w/2,-h/2,w,9);tx(title,-w/2+4,-h/2+7,6.8,'#031008','left',700);
+    for(let i=0;i<3;i++){ctx.strokeStyle=hexA(K.grid,.7);ctx.beginPath();ctx.moveTo(-w/2+3,-h/2+13+i*14+7);ctx.lineTo(w/2-3,-h/2+13+i*14+7);ctx.stroke();tx(rows[i],-w/2+5,-h/2+19+i*14,6.6,i===0?K.tx:K.mu);}ctx.restore();});}
+// small labelled node markers on the band with a leader line inward
+function nodes(t,lw){const pl=plateAt(t),P=SIM3.price,L=[];
+  if(pl===0||pl===3){L.push([SA.sweep,SA.ext,'SWEEP '+P(SA.ext),bar(1.2),K.mint],[DT.runs[0].run,C[DT.runs[0].run].c,'RUN',bar(3.7),K.dn]);}
+  if(pl===1&&t>=bar(8)){L.push([SA.fvg.i,SA.fvg.hi,'FVG',bar(8.3),K.mint],[SA.ob.i,SA.ob.lo,'OB',bar(8.6),K.mu]);}
+  if(pl===2){L.push([SA.sweep,SA.ext,'SWEEP',T_SWEEP,K.mint],[SA.csd,C[SA.csd].c,'CSD',T_CSD,K.mint],[SA.mss,C[SA.mss].c,'MSS',T_MSS,K.mint],[SA.fvg.i,SA.fvg.hi,'FVG',T_FVG,K.mint],[SA.fill,SA.entry,'ENTRY '+P(SA.entry),T_DROP,K.w],[SB.sweep,SB.ext,'SWEEP · 12:40',T_BSWEEP,K.dn]);}
+  L.forEach(([i,p,label,t0,col],k)=>{const v=sst(t0,t0+.3,t);if(v<=0)return;const a=ang(i),[x,y]=POS(i,p),rl=258-((k*11)%24),lx=Math.cos(a)*rl,ly=Math.sin(a)*rl;ctx.globalAlpha=v;ctx.strokeStyle=hexA(col,.8);ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(lx,ly);ctx.stroke();ctx.fillStyle=col;ctx.fillRect(lx-2.5,ly-2.5,5,5);
+    const cr=cam(t).rot,sa2=a+cr,right=Math.cos(sa2)>0;ctx.save();ctx.translate(lx,ly);ctx.rotate(-cr);tx(label,right?-6:6,3,7.6,col,right?'right':'left',700);ctx.restore();ctx.globalAlpha=1;});}
+
+// ---------- chrome ----------
+function topbar(t){const pl=plateAt(t);tx('F369 engine',LY.bar.x,LY.bar.y,LAYOUT==='16x9'?38:36,K.w,'left',200,LIGHT,'-0.5px');tx('A SCHEMATIC OF EVERY ANSWER',LY.bar.x,LY.bar.y+20,10,K.dim,'left',400,MONO,'1.5px');
+  const rx=W-LY.bar.x,mm=Math.floor(t/60),ss=Math.floor(t%60),fr=Math.floor((t%1)*FPS);tx(`${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}:${String(fr).padStart(2,'0')}`,rx,LY.bar.y-14,12,K.mu,'right');tx(`PLATE ${String(pl+1).padStart(2,'0')} / 04 · ${PLATES[pl][2]}`,rx,LY.bar.y+4,11,K.mint,'right',700,MONO,'1px');
+  const tabsX=LY.bar.x,tw=Math.min(150,(W-2*LY.bar.x-(LAYOUT==='16x9'?560:300))/4),ty=LY.bar.y+52;
+  PLATES.forEach((p,i)=>{const x=tabsX+i*tw,act=i===pl,done=i<pl,f=act?(t-p[0])/(p[1]-p[0]):(done?1:0);tx(p[3],x,ty,10.5,act?K.w:(done?K.mu:K.dim),'left',act?700:400,MONO,'1.5px');ctx.fillStyle=K.line;ctx.fillRect(x,ty+7,tw-14,1.5);ctx.fillStyle=act?K.mint:K.dim;ctx.fillRect(x,ty+7,(tw-14)*f,1.5);});
+  ctx.strokeStyle=K.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,SC.y-1);ctx.lineTo(W,SC.y-1);ctx.stroke();}
+function statement(t){const S=LY.stmt;for(const [a,b,label,lines] of STMT){if(t<a||t>=b)continue;const al=REDUCED?1:Math.min(1,(t-a)/.35,(b-t)/.3),sl=REDUCED?0:(1-sst(a,a+.5,t))*14;ctx.globalAlpha=Math.max(0,al);
+  tx(label,S.lx,S.ly+sl,LAYOUT==='16x9'?12:13,K.mint,'left',700,MONO,'2px');lines.forEach((l,i)=>tx(l,S.lx,S.y+i*S.lh+sl,S.fs,K.w,'left',200,LIGHT,'-1px'));ctx.globalAlpha=1;}}
+function disclaimer(){const m='Trading education · Not financial advice · Simulated data';ctx.font=`500 12.5px ${MONO}`;const mw=ctx.measureText(m).width;ctx.fillStyle='rgba(4,9,7,.94)';ctx.fillRect(W/2-mw/2-14,LY.disc-16,mw+28,24);tx(m,W/2,LY.disc,12.5,'#b6cfc4','center',500);}
+
+// ---------- lower region: ledger (dial / ledger / answer) and the dashboard strip (core) ----------
+const spark=(x,y,w,h,seed,col,t,hot)=>{ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.beginPath();for(let i=0;i<=24;i++){const v=.5+.35*Math.sin(i*.55+seed*3+t*(hot?1.4:.3))+.15*(R(seed,i)-.5);i?ctx.lineTo(x+w*i/24,y+h*(1-v)):ctx.moveTo(x,y+h*(1-v));}ctx.stroke();};
+function ledger(t,off){const L=LY.lower,pl=plateAt(t),cols=L.w>L.h*2?2:1,rows=10/cols,rh=(L.h-26)/rows,w=L.w/cols;
+  ctx.save();ctx.translate(0,off);ctx.fillStyle=K.panel;rr(L.x,L.y,L.w,L.h,12);ctx.fill();ctx.strokeStyle=K.line;ctx.stroke();tx('THE TEN STEPS',L.x+16,L.y+20,10.5,K.w,'left',700,MONO,'1.5px');tx('RULE CHAIN · IF / THEN',L.x+L.w-16,L.y+20,9.5,K.dim,'right');
+  STEPS.forEach((s,i)=>{const c=Math.floor(i/rows),r=i%rows,x=L.x+c*w+16,y=L.y+30+r*rh,pass=pl===1?(t>=P2_CHECK(i)):(pl===3?t>=bar(20)+BEAT*(i*.5+1):false),vis=sst(.4+i*.12,.9+i*.12,t)*(pl===0?1:1);
+    ctx.globalAlpha=vis;tx(String(i+1).padStart(2,'0'),x,y+rh*.55,11,pass?K.mint:K.dim,'left',700);tx(s[0],x+30,y+rh*.42,11,pass?K.w:K.mu,'left',700);tx(s[1],x+30,y+rh*.42+13,8.8,K.dim);
+    const sw_=Math.min(110,w*.2);spark(x+w-sw_-70,y+rh*.12,sw_,rh*.6,i+2,pass?hexA(K.mint,.9):hexA(K.dim,.8),t,pass);
+    if(pass){const k=1-sst(0,.35,t-(pl===1?P2_CHECK(i):bar(20)+BEAT*(i*.5+1)));ctx.strokeStyle=K.mint;ctx.lineWidth=2.4;const cx=x+w-44,cy=y+rh*.45;ctx.beginPath();ctx.moveTo(cx-6,cy);ctx.lineTo(cx-2,cy+5);ctx.lineTo(cx+7,cy-6);ctx.stroke();if(k>0){glow('mint',cx,cy,18*k+8,k*.8);}}
+    else{ctx.strokeStyle=hexA(K.dim,.7);ctx.lineWidth=1.2;rr(x+w-52,y+rh*.45-8,16,16,3);ctx.stroke();}
+    ctx.strokeStyle=K.line;ctx.beginPath();ctx.moveTo(x,y+rh-3);ctx.lineTo(x+w-32,y+rh-3);ctx.stroke();ctx.globalAlpha=1;});
+  ctx.restore();}
+function answerLower(t,off){const L=LY.lower,M=MATH,P=SIM3.price;ctx.save();ctx.translate(0,off);
+  // top: ten chips (all lit) ; bottom: the risk math, same numbers as the dashboard and the ledger
+  ctx.fillStyle=K.panel;rr(L.x,L.y,L.w,L.h,12);ctx.fill();ctx.strokeStyle=K.line;ctx.stroke();tx('THE RULE CHAIN',L.x+16,L.y+20,10.5,K.w,'left',700,MONO,'1.5px');tx(`${Math.min(10,Math.floor(Math.max(0,t-bar(20))/BEAT*.9))} / 10 CONDITIONS MET → EXECUTE`,L.x+L.w-16,L.y+20,10,K.mint,'right',700);
+  const cols=LAYOUT==='16x9'?2:5,cw=(L.w-32)/cols,rowsN=10/cols,chH=LAYOUT==='16x9'?36:30,g=4;
+  STEPS.forEach((s,i)=>{const c=i%cols,r=Math.floor(i/cols),x=L.x+16+c*cw,y=L.y+32+r*(chH+g),on=t>=bar(20)+BEAT*(i*.5+1);ctx.fillStyle=on?hexA(K.mint,.12):hexA(K.grid,.15);ctx.fillRect(x,y,cw-g,chH);ctx.strokeStyle=on?hexA(K.mint,.7):hexA(K.grid,.5);ctx.strokeRect(x+.5,y+.5,cw-g-1,chH-1);tx(String(i+1).padStart(2,'0'),x+6,y+12,9,on?K.mint:K.dim,'left',700);tx(s[0],x+6,y+chH-8,7.8,on?K.w:K.dim,'left',700);if(on)tx('✓',x+cw-g-8,y+13,10,K.mint,'right',700);});
+  const my=L.y+32+rowsN*(chH+g)+10;if(my+60<L.y+L.h){const a=sst(bar(21),bar(21.6),t);ctx.globalAlpha=a;ctx.strokeStyle=K.line;ctx.beginPath();ctx.moveTo(L.x+14,my-4);ctx.lineTo(L.x+L.w-14,my-4);ctx.stroke();
+    mathLine(`size = (equity × risk%) / (entry − stop) = (${fmt(M.equity)} × 0.5%) / (${fmt(M.entry)} − ${fmt(M.stop)}) = ${fmt(M.riskUsd)} / ${M.risk} = ${M.perPt.toFixed(2)} $/pt → ${M.contracts} MNQ`,L.x+16,my+14,9.2,t);
+    mathLine(`RR = (target − entry) / (entry − stop) = (${fmt(M.tp)} − ${fmt(M.entry)}) / ${M.risk} = ${fmt(M.tp-M.entry)} / ${M.risk} = ${M.rr.toFixed(2)}`,L.x+16,my+32,9.2,t);ctx.globalAlpha=1;}
+  ctx.restore();}
+function mathLine(s,x,y,sz,t){ctx.font=`400 ${sz}px ${MONO}`;ctx.textAlign='left';let cx=x;s.split(/(\d[\d,]*\.?\d*)/).forEach(seg=>{if(!seg)return;const v=parseFloat(seg.replace(/,/g,'')),hot=/^[1-9]/.test(seg)&&(v===3||v===6||v===9)&&false;ctx.fillStyle=/^\d/.test(seg)?K.w:K.mu;ctx.fillText(seg,cx,y);cx+=ctx.measureText(seg).width;});}
+
+// dashboard strip (2x4)
+function frameBox(r,title,tag,col){ctx.fillStyle=K.panel;rr(r.x,r.y,r.w,r.h,10);ctx.fill();ctx.strokeStyle=K.line;ctx.lineWidth=1.2;ctx.stroke();ctx.fillStyle=hexA(K.mint,.9);ctx.fillRect(r.x+12,r.y+9,22,2);tx(title,r.x+12,r.y+25,9.5,K.w,'left',700,MONO,'1px');if(tag)tx(tag,r.x+r.w-12,r.y+25,8.5,col||K.dim,'right');}
+const FEEDLINES=['check htf bias · d1 / 1h','scan asia range · hi/lo marked','load pools · bsl 21,430 · ssl 21,380','f369 window · ldn c1 open','sweep? ssl 21,380 · wick 21,371','csd · close > 21,395','displacement · body 37.5','mss · close > 21,397','fvg 21,396 → 21,416','price in discount · 23% of range','order: limit 21,406','stop 21,368 · target 21,596','risk 0.5% · 6 MNQ · $456'];
+function dashboard(t,off){ctx.save();ctx.translate(0,off);const live=t,P=SIM3.price,pulse=kick(t)*energy(t);
+  // 1 signal feed
+  {const r=panelRect(0);frameBox(r,'SIGNAL FEED','LIVE',K.mint);ctx.save();ctx.beginPath();ctx.rect(r.x,r.y+28,r.w,r.h-30);ctx.clip();const line=(t-T_WIN)/BEAT*.8+3,base=Math.floor(line),fr=line-base,rh=Math.max(11,(r.h-40)/7);for(let i=0;i<9;i++){const idx=mod(base+i-8,FEEDLINES.length),y=r.y+r.h-8-(8-i+fr)*rh,fresh=i===8;tx(String(base+i-8).padStart(3,'0'),r.x+10,y,8,K.dim);tx(FEEDLINES[idx],r.x+36,y,8,fresh?K.w:K.mu,'left',fresh?700:400);}ctx.restore();}
+  // 2 liquidity solver: resting orders by price level, taken at the sweep
+  {const r=panelRect(1);frameBox(r,'LIQUIDITY SOLVER','SSL / BSL',K.dim);const lv=[[21430,'BSL'],[21416,''],[21406,''],[21396,''],[21388,''],[21380,'SSL'],[21371,'']],taken=t>=T_SWEEP,rh=(r.h-40)/lv.length;lv.forEach(([p,l],i)=>{const y=r.y+36+i*rh,w0=(r.w-70)*(.35+.6*R(i,3)),w=taken&&p<=21380?w0*(1-sst(T_SWEEP,T_SWEEP+.5,t)):w0;ctx.fillStyle=hexA(p<=21380?K.mint:K.dn,.5);ctx.fillRect(r.x+54,y,w,rh*.6);tx(String(p),r.x+10,y+rh*.5,7.5,K.dim);if(l)tx(l,r.x+r.w-10,y+rh*.5,7.5,l==='SSL'?K.mint:K.dn,'right',700);});if(taken)tx('orders taken',r.x+r.w/2,r.y+r.h-8,8,K.mint,'center',700);}
+  // 3 algo workspace: pseudo-code lights up line by line
+  {const r=panelRect(2);frameBox(r,'ALGO WORKSPACE','f369.py',K.dim);const CODE=['if f369_window(now):  # 90m cycle','  pools = liquidity(day)','  if swept(pools.ssl) and csd():','    if displacement() and mss():','      z = pd_array(side=discount)','      place(z, stop=sweep-3,','            risk=0.5%, rr=5)'],times=[T_WIN,T_WIN+BEAT,T_SWEEP,T_DISP,T_FVG,T_DROP,T_DROP+BEAT*.5],rh=Math.min(13,(r.h-40)/CODE.length);
+    CODE.forEach((l,i)=>{const lit=t>=times[i]&&t<T_TURN,turn=t>=T_TURN,y=r.y+38+i*rh;tx(String(i+1).padStart(2,'0'),r.x+10,y,8,K.grid);tx(l,r.x+28,y,8.2,turn&&i===0?hexA(K.dn,.95):(lit?(i>=5?K.mint:K.w):K.dim),'left',lit&&i>=5?700:400);if(lit&&Math.abs(t-times[i])<.5){ctx.fillStyle=K.mint;ctx.fillRect(r.x+4,y-8,2,10);}});if(t>=T_TURN)tx('f369_window → false · skip',r.x+10,r.y+r.h-8,8,K.dn,'left',700);}
+  // 4 PD field: two heatmaps, premium (red) / discount (green)
+  {const r=panelRect(3);frameBox(r,'PD FIELD','EQ '+P(SA.eq),K.dim);const cw=(r.w-30)/2;for(let m=0;m<2;m++){const x0=r.x+10+m*(cw+10);for(let i=0;i<8;i++)for(let j=0;j<6;j++){const v=.5+.5*Math.sin(i*.8+j*.9+t*1.6+m*2);const prem=j<3;ctx.fillStyle=hexA(prem?K.dn:K.up,.12+.5*v*(prem===(m===0)?1:.5));ctx.fillRect(x0+i*(cw/8),r.y+34+j*((r.h-60)/6),cw/8-1,(r.h-60)/6-1);}}tx('premium · sells',r.x+10,r.y+r.h-8,7.5,K.dn);tx('discount · buys',r.x+r.w-10,r.y+r.h-8,7.5,K.up,'right');}
+  // 5 session routes: 90-minute cycles, 3 per session, none for Asia
+  {const r=panelRect(4);frameBox(r,'SESSION ROUTES','NY TIME',K.dim);const hn=Math.floor(handAt(t)),w=SIM3.windowAt(hn),rows=[['ASIA','20:00-00:00','no cycles'],['LDN C1','02:00-03:30',''],['LDN C2','03:30-05:00',''],['LDN C3','05:00-06:30',''],['NY C1','07:00-08:30',''],['NY C2','08:30-10:00',''],['NY C3','10:00-11:30','']];const rh=(r.h-38)/rows.length;rows.forEach((x,i)=>{const act=w.ok&&((i>=1&&i<=3&&w.ses==='LDN'&&w.cyc===i)||(i>=4&&w.ses==='NY'&&w.cyc===i-3)),y=r.y+36+i*rh+rh*.6;ctx.fillStyle=act?K.mint:K.grid;ctx.beginPath();ctx.arc(r.x+14,y-3,3,0,TAU);ctx.fill();tx(x[0],r.x+24,y,8,act?K.w:K.mu,'left',act?700:400);tx(x[1],r.x+r.w-10,y,7.8,K.dim,'right');});}
+  // 6 validation: waveforms and checks passed
+  {const r=panelRect(5);frameBox(r,'VALIDATION','sample buffer',K.dim);for(let c=0;c<3;c++){ctx.strokeStyle=c===1?K.mint:hexA(K.mu,.8);ctx.lineWidth=1.2;ctx.beginPath();const y0=r.y+r.h*.35+c*(r.h*.17);for(let x=0;x<=r.w-20;x+=2){const ph=x/(r.w-20)*TAU*2.2+t*(2+c)+c*2,v=Math.sin(ph)*(r.h*.05)+Math.sin(ph*3.1)*(r.h*.02);x?ctx.lineTo(r.x+10+x,y0+v):ctx.moveTo(r.x+10,y0+v);}ctx.stroke();}const n=t>=T_TURN?9:PASS_A.filter(v=>t>=v).length;tx('checks passed',r.x+10,r.y+r.h-8,8,K.dim);tx(`${n} / 10`,r.x+r.w-10,r.y+r.h-8,10,t>=T_TURN?K.dn:K.mint,'right',700);}
+  // 7 agents / dispatch
+  {const r=panelRect(6);frameBox(r,'AGENTS / DISPATCH','5 WORKERS',K.dim);const AG=[['GENERAL','route',T_ARM],['DATA','scan feeds',T_WIN],['RESEARCH','pools · sweep',T_SWEEP],['BACKTEST','validate',T_CSD],['LIVE','place order',T_DROP]],rh=(r.h-40)/5;AG.forEach(([n,job,t0],i)=>{const y=r.y+36+i*rh,on=t>=t0&&t<t0+3,col=K.ag[n];ctx.fillStyle=col;ctx.beginPath();ctx.arc(r.x+16,y+rh*.4,4*(on?1+.5*pulse:1),0,TAU);ctx.fill();tx(n,r.x+28,y+rh*.55,8.6,on?K.w:K.mu,'left',700);tx(on?job.toUpperCase():'IDLE',r.x+r.w-10,y+rh*.55,7.8,on?col:K.dim,'right',700);ctx.fillStyle=K.line;ctx.fillRect(r.x+28,y+rh*.7,r.w-40,2);ctx.fillStyle=col;ctx.fillRect(r.x+28,y+rh*.7,(r.w-40)*(on?clamp((t-t0)/2.4,0,1):0),2);});}
+  // 8 setup index: matrix of past setups, today's pick highlighted, the skip marked
+  {const r=panelRect(7);frameBox(r,'SETUP INDEX','sim',K.dim);const cw=(r.w-20)/12,ch=(r.h-46)/6;for(let i=0;i<12;i++)for(let j=0;j<6;j++){const taken=R(i*7+j,2)<.3,pick=i===8&&j===2&&t>=T_DROP,skip=i===3&&j===4&&t>=T_SKIP;ctx.fillStyle=pick?K.mint:(skip?K.dn:hexA(taken?K.mu:K.grid,taken?.55:.35));ctx.fillRect(r.x+10+i*cw,r.y+34+j*ch,cw-1.5,ch-1.5);}tx('take',r.x+10,r.y+r.h-8,7.5,K.mint);tx('skip',r.x+r.w-10,r.y+r.h-8,7.5,K.dn,'right');}
+  ctx.restore();}
+
+function lowerRegion(t){const L=LY.lower,slide=H;const a=sst(T_WIN-.5,T_WIN+.2,t)*(1-sst(bar(20)-.2,bar(20)+.5,t));const dashOff=(1-a)*(LAYOUT==='16x9'?W:300);
+  const led=1-a;if(led>0.001){const off=(LAYOUT==='16x9')?a*W:a*320;if(plateAt(t)===3)answerLower(t,0);else ledger(t,off*(plateAt(t)===2?1:0));}
+  if(plateAt(t)===3)answerLower(t,(1-sst(bar(20)-.2,bar(20)+.5,t))*320*(LAYOUT==='16x9'?0:1));
+  if(a>0.001)dashboard(t,dashOff);}
+
+// ---------- end card ----------
+function endCard(t){const v=sst(T_END,T_END+.6,t);if(v<=0)return;ctx.globalAlpha=v*.55;ctx.fillStyle=K.bg;ctx.fillRect(SC.x,SC.y,SC.w,SC.h);ctx.globalAlpha=v;const cx=SC.x+SC.w/2,cy=SC.y+SC.h/2;tx('F369.AI',cx,cy,LAYOUT==='16x9'?150:130,K.w,'center',200,LIGHT,'-3px');tx('The engine behind every answer.',cx,cy+58,LAYOUT==='16x9'?34:32,K.mu,'center',200,LIGHT);tx('F369 ENGINE · A SCHEMATIC OF EVERY ANSWER',cx,cy+100,11,K.mint,'center',700,MONO,'3px');ctx.globalAlpha=1;}
+
+
+function overlays(t){const pl=plateAt(t);
+  if(t>=T_TURN&&t<bar(20)){const v=sst(T_TURN,T_TURN+.5,t)*(1-sst(bar(20)-.3,bar(20),t)),x=SC.x+30,y=SC.y+28;ctx.globalAlpha=v;ctx.fillStyle='rgba(4,9,7,.9)';ctx.fillRect(x-10,y-14,LAYOUT==='16x9'?560:500,70);ctx.strokeStyle=K.line;ctx.strokeRect(x-9.5,y-13.5,LAYOUT==='16x9'?559:499,69);
+    tx(`A  02:25 · LDN C1 · inside 90m cycle`,x,y+4,12,K.w,'left',700);tx('TAKEN ✓',x+(LAYOUT==='16x9'?540:480),y+4,12,K.mint,'right',700);
+    tx(`B  12:40 · same sweep · no 90m cycle`,x,y+36,12,K.w,'left',700);tx(t>=T_SKIP?'SKIP ✗':'…',x+(LAYOUT==='16x9'?540:480),y+36,12,t>=T_SKIP?K.dn:K.dim,'right',700);ctx.globalAlpha=1;}
+  if(pl===3&&t>=bar(20.4)&&t<T_END+.3){const v=sst(bar(20.4),bar(20.9),t)*(1-sst(T_END-.3,T_END+.3,t)),[sx,sy]=toScreen(t,...POS(SA.sweep,SA.ext)),bw=LAYOUT==='16x9'?420:380,bh=108,bx=clamp(sx-bw-60,SC.x+20,SC.x+SC.w-bw-20),by=clamp(sy-bh/2+120,SC.y+120,SC.y+SC.h-bh-20);ctx.globalAlpha=v;
+    ctx.strokeStyle=hexA(K.mint,.8);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(bx+bw,by+bh/2);ctx.stroke();ctx.fillStyle='rgba(4,9,7,.94)';ctx.fillRect(bx,by,bw,bh);ctx.strokeRect(bx+.5,by+.5,bw-1,bh-1);ctx.fillStyle=hexA(K.mint,.9);ctx.fillRect(bx,by,bw,22);tx('THE WICK · LABELED CORRECTLY',bx+10,by+15,10,'#031008','left',700,MONO,'1px');
+    [`SSL sweep · 02:25 · LDN C1`,`wick 9 pts through 21,380`,`close back inside = liquidity taken`,`then CSD, MSS, FVG in discount`].forEach((l,i)=>tx(l,bx+10,by+40+i*16,10.5,i===0?K.w:K.mu,'left',i===0?700:400));ctx.globalAlpha=1;}}
+function frame(t){ctx.globalAlpha=1;ctx.fillStyle=K.bg;ctx.fillRect(0,0,W,H);
+  dial(t);overlays(t);endCard(t);topbar(t);statement(t);lowerRegion(t);disclaimer();
+  // fade out under the end card
+  if(t>D-3.4){ctx.globalAlpha=sst(D-3.4,D-.15,t)*.9;ctx.fillStyle=K.bg;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}}
+window.TIMELINE={duration:D,fps:FPS,captions:STMT.map(s=>[s[0],s[1],[s[2]].concat(s[3])]),
+  cues:{checks:PASS_A,p2:STEPS.map((_,i)=>P2_CHECK(i)),bars:[0,5,11,15,20].map(bar)},
+  markers:{window:T_WIN,sweep:T_SWEEP,csd:T_CSD,mss:T_MSS,fvg:T_FVG,drop:T_DROP,fill:T_FILL,tp:T_TP,turn:T_TURN,skip:T_SKIP,end:T_END,plates:PLATES.map(p=>p[0])},math:MATH};
+window.seek=t=>{frame(t);return true;};seek(+(q.get('t')||0));
+if(q.get('play')==='1'){const t0=performance.now();(function l(){seek(((performance.now()-t0)/1000)%D);requestAnimationFrame(l);})();}
+</script></body></html>
