@@ -25,3 +25,13 @@
 - Flashes: ship bursts de-duplicated to at most 2.5 per second. Reduced-motion cut: fixed camera, weaker flashes, no strobing.
 - Score: clean generated bed (sub, pad, soft pulse, A-minor motif that returns on "gate back on"), UI cues only on role intros, ships, gate off/on. No strings/brass this time.
 - Disclaimer line kept at the bottom (channel is trading-adjacent) even though the topic is not trading.
+
+## Film 4: f369-engine (brand film, explainer-film baseline with owner overrides)
+- Overrides from the owner: brand look and the ink craft level override the baseline visual bans (glow and radial streaks are brand). Music = ONLY the supplied track (Janji - Heroes Tonight, NCS), no generated music or sound effects.
+- One idea: ICT liquidity, PD arrays and Frank369 timing are rules, not art: BSL/SSL rest orders, a sweep takes them, CSD + displacement + MSS confirm, the algo buys only from a discount PD array, and only inside the F369 time gate.
+- 9:16 master (like the brand reference), 4:5 and 16:9 recompositions of the same film. 45 s = 24 bars at 128 bpm.
+- Music cut: window starts at 38.955 s of the track so its silence-then-hit lands on 28.125 s (bar 15 = ORDER PLACED). Bass enters at bar 7, other energy shifts at bars 12, 16, 20. Fade-out starts 41.3 s under the end card. Mixed to -14 LUFS with a plain gain change (no limiter), 12 ms fade-in to avoid a click.
+- Frank369 rules as given by the owner: "90m liq sweep, csd, mss, 0.5% risk, 5 rr". Interpretations (assumptions, change in sim.js if wrong): 90m window = 3 cycles per London (from 02:00) and New York (from 07:00) session, none for Asia; CSD = first close back through the open of the down-run that led into the sweep; target 5R = opposing BSL.
+- 369 math (owner: "use also 369 math", rule not specified): implemented as the digit sum of the sweep time (HHMM). Digital root must be 3, 6 or 9. 02:25 = 0+2+2+5 = 9 passes; 12:40 = 1+2+4+0 = 7 fails. ASSUMPTION: this definition is mine; the owner never described it. It is isolated in sim.js (digits369) and shown in the ledger, cards, session routes panel and the answer plate. Numbers equal to 3, 6, 9 are highlighted in mint in the math.
+- The brand reference video (refs/brand_f369.mp4) was never supplied; the look follows the owner's written description only.
+- Prices are scripted/simulated; every annotation (sweep, run, CSD, displacement, MSS, FVG, dealing range, premium/discount, order, target, skip) is detected from the candles in sim.js.

@@ -1,0 +1,7 @@
+F369 engine — A schematic of every answer
+
+How the F369 engine reads the market: liquidity sweeps, PD arrays and timing turned into rules a machine executes.
+
+Trading education · Not financial advice · Simulated data
+
+Music: Janji - Heroes Tonight (feat. Johnning) [NCS Release] — ncs.io/ht

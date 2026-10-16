@@ -1,0 +1,45 @@
+1
+00:00:00,300 --> 00:00:05,625
+YOUR QUESTION
+Bad luck, or liquidity?
+
+2
+00:00:05,625 --> 00:00:09,375
+WHERE STOPS REST
+Orders rest above highs
+and below lows.
+
+3
+00:00:09,375 --> 00:00:15,000
+THE TEN STEPS
+Ten checks.
+No discretion.
+
+4
+00:00:15,000 --> 00:00:20,625
+PD ARRAYS
+Buy from discount.
+Sell from premium.
+
+5
+00:00:20,625 --> 00:00:28,125
+ONE ENGINE · FIVE AGENTS
+The agents run
+the chain live.
+
+6
+00:00:28,125 --> 00:00:32,906
+ORDER PLACED
+Stop beyond the sweep.
+Target 5R.
+
+7
+00:00:32,906 --> 00:00:37,500
+SAME SWEEP · OUTSIDE THE WINDOW
+The algo skips it.
+
+8
+00:00:37,500 --> 00:00:41,250
+THE ANSWER
+Not luck.
+A rule chain.
