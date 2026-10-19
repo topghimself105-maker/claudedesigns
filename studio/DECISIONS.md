@@ -55,3 +55,7 @@
 - Rebuilt to the supplied reference layout (HUD, 8 section tabs, crawler spider in a node nebula, six panels); grayscale like the reference, one mint accent only on the order ticket.
 - 1080x1350 (4:5), 60 fps (owner wrote 165 Hz + 30 fps; X plays max 60 fps, owner chose 60), BT.709 limited range, silent.
 - All trades, journal notes and stats are seeded and simulated (NQ); order sized from risk 0.5% / 25 pts / $20 per point = 1 contract; rules labelled example.
+
+## Data to Order v2
+- Clusters are now spheres (balls of information) joined by a route; the spider carries each sphere's key result in a CARRYING box and ends on ORDER FILLED (simulated fill 0.25 pt slippage).
+- Music: owner-supplied Afro House mix, window 99.49 s -> 129.49 s, its drop at film 26.0 s = ORDER FILLED; -14.0 LUFS gain-only, peak -1.7 dBFS; 120 bpm, section cuts on the 0.5 s beat grid. Licence/credits unconfirmed.
