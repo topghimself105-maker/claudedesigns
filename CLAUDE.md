@@ -10,6 +10,14 @@ Studio for X/Twitter and YouTube content about automation and trading automation
 - Disclaimer on every trading-related video: "Not financial advice. For educational purposes only. Simulated data." Small, centred at the bottom, light grey on a dark backing, visible for the whole video.
 - Never invent trading rules (ICT or Frank369). If a rule, formula or definition is unclear, ask the owner before building. All numbers shown are simulated or sourced and labelled as such.
 
+## Music (all videos)
+- Default soundtrack for every video: `assets/music/heroes_tonight.mp3` (Janji - Heroes Tonight feat. Johnning, NCS). Use ONLY the supplied music: no generated tracks and no generated sound effects. Cut on the beat, put the track's drop on the video's key moment, fade out under the end card, mix to about -14 LUFS with a plain gain change, no clipping.
+- Every export gets a `DESCRIPTION.txt` and a README credit line: "Music: Janji - Heroes Tonight (feat. Johnning) [NCS Release] — ncs.io/ht".
+- Other tracks only if the owner supplies the files (the Drive folder "Music for F369Ai" was not readable from this session).
+
+## Real data only
+- Use only real stocks (tickers) and real automations the owner says they have actually used. Never invent a ticker, automation, result or number. If it is not provided, ask. Simulated numbers must be labelled as simulated.
+
 ## Frank369 videos
 - Stills-first approval: render 3 still frames (start, middle, climax), show them, wait for approval, then do the full render with audio, keep the file under 100 MB, commit to `out/` and push.
 
