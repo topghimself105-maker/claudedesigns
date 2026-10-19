@@ -44,3 +44,9 @@
 - End card uses the owner's F369.AI brand mark.
 
 - nasdaq-flash music change: owner replaced Heroes Tonight with Jeff Germita - IM SO LUCKY (HARDTEKK) (156 bpm, 89.3 s). Cut window starts at 55.426 s so the second drop (61.58 s, after a 12-bar breakdown) lands on beat 16 (6.15 s). Licence not stated by the owner: flagged, not assumed.
+
+## Nasdaq Flash v2 (finetune)
+- Every cut is >= 1 beat (0.385 s at 156 bpm), so flashes are never closer than that (owner asked ~0.30 s; whole beats keep cuts on the music grid).
+- Build-up = the owner's four page lines, one per bar; drop = AUTOMATED.; Nasdaq fact cards; company edits (Google, Meta, Apple, Microsoft, Amazon, NVIDIA, Tesla, Netflix) with own graphics, illustrative charts, no logos.
+- Facts to verify before publishing: Nasdaq founded 1971, Nasdaq-100 ~100 large non-financial companies, IPO years per company; "70%", "$300M / 0.006 s" are the owner's page texts.
+- Layouts: 4x5 (X feed) and 16x9 (YouTube) from the same film file.
