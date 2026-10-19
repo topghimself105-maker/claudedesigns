@@ -50,3 +50,8 @@
 - Build-up = the owner's four page lines, one per bar; drop = AUTOMATED.; Nasdaq fact cards; company edits (Google, Meta, Apple, Microsoft, Amazon, NVIDIA, Tesla, Netflix) with own graphics, illustrative charts, no logos.
 - Facts to verify before publishing: Nasdaq founded 1971, Nasdaq-100 ~100 large non-financial companies, IPO years per company; "70%", "$300M / 0.006 s" are the owner's page texts.
 - Layouts: 4x5 (X feed) and 16x9 (YouTube) from the same film file.
+
+## Data to Order (film 6, X)
+- Rebuilt to the supplied reference layout (HUD, 8 section tabs, crawler spider in a node nebula, six panels); grayscale like the reference, one mint accent only on the order ticket.
+- 1080x1350 (4:5), 60 fps (owner wrote 165 Hz + 30 fps; X plays max 60 fps, owner chose 60), BT.709 limited range, silent.
+- All trades, journal notes and stats are seeded and simulated (NQ); order sized from risk 0.5% / 25 pts / $20 per point = 1 contract; rules labelled example.

@@ -1,0 +1,3 @@
+Data to Order: how an automation reads trades.csv + journal.md and builds one exact order (NQ, simulated).
+Not financial advice. For educational purposes only. Simulated data.
+Silent master: add music in the editor.
