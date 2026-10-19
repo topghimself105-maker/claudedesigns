@@ -35,3 +35,10 @@
 - 369 math (owner: "use also 369 math", rule not specified): implemented as the digit sum of the sweep time (HHMM). Digital root must be 3, 6 or 9. 02:25 = 0+2+2+5 = 9 passes; 12:40 = 1+2+4+0 = 7 fails. ASSUMPTION: this definition is mine; the owner never described it. It is isolated in sim.js (digits369) and shown in the ledger, cards, session routes panel and the answer plate. Numbers equal to 3, 6, 9 are highlighted in mint in the math.
 - The brand reference video (refs/brand_f369.mp4) was never supplied; the look follows the owner's written description only.
 - Prices are scripted/simulated; every annotation (sweep, run, CSD, displacement, MSS, FVG, dealing range, premium/discount, order, target, skip) is detected from the candles in sim.js.
+
+## Film 5: nasdaq-flash (high-dopamine montage, owner's Hyperliquid-style reference)
+- Reference = the supplied 12.6 s montage (cuts every 0.2-0.4 s, white flashes, glitch slices, order tickets, chart walls, big captions). Only the editing language is taken; none of its footage, people, articles or text.
+- Owner: "real stocks and automations that we have used", Nasdaq stocks, "TradingView charts like in the video". Implemented as: 14 real Nasdaq tickers; the five automations we built in this studio shown with real frames captured from our own films (assets/); a pro-style dark chart drawn by us (no TradingView branding or data).
+- No market-data access in this environment, so chart price action is ILLUSTRATIVE (seeded, indexed to 100, badge on screen) and no real quotes, P&L or results are shown. Order tickets show ticker + order type only.
+- 30 s = 16 bars at 128 bpm, 16:9 (YouTube, as for the F369 film). Music = Heroes Tonight only; window starts at 59.58 s so the track's silence-then-hit lands at 7.5 s (beat 16) = the drop/flash.
+- End card uses the owner's F369.AI brand mark.

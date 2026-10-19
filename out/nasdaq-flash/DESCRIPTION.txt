@@ -1,0 +1,8 @@
+Nasdaq Flash — real Nasdaq tickers, our own automations
+
+Fast montage of 14 Nasdaq-listed stocks (NVDA, AAPL, MSFT, AMZN, GOOGL, META, TSLA, AVGO, NFLX, COST, AMD, ADBE, QCOM, CSCO) and the five automations we built: Signal to Fill, ICT Desk, Night Desk, Ship Line, F369 Engine.
+Charts are illustrative, not live quotes.
+
+Not financial advice. For educational purposes only. Simulated data.
+
+Music: Janji - Heroes Tonight (feat. Johnning) [NCS Release] — ncs.io/ht

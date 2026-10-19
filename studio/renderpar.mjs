@@ -19,7 +19,7 @@ mkdirSync(seg, { recursive: true });
 const probe = await chromium.launch({ args: ['--no-sandbox'] });
 const pp = await (await probe.newContext({ viewport: { width: W, height: H } })).newPage();
 await pp.goto(url);
-await pp.evaluate(() => document.fonts.ready);
+await pp.evaluate(() => window.__ready || document.fonts.ready);
 const tl = await pp.evaluate(() => window.TIMELINE);
 await probe.close();
 writeFileSync(resolve(out, `${film}.cues.json`), JSON.stringify(tl));
@@ -35,7 +35,7 @@ async function work(k) {
   const br = await chromium.launch({ args: ['--no-sandbox'] });
   const page = await (await br.newContext({ viewport: { width: W, height: H } })).newPage();
   await page.goto(url);
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(() => window.__ready || document.fonts.ready);
   const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', String(tl.fps), '-i', '-',
     '-vf', 'scale=out_color_matrix=bt709:out_range=tv:flags=accurate_rnd+full_chroma_int+bitexact,format=yuv420p',
     '-c:v', 'libx264', '-preset', 'fast', '-profile:v', 'high', '-crf', '14', '-maxrate', '16M', '-bufsize', '32M',
