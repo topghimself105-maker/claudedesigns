@@ -13,7 +13,7 @@ Studio for X/Twitter and YouTube content about automation and trading automation
 ## Music (all videos)
 - Default soundtrack for every video: `assets/music/heroes_tonight.mp3` (Janji - Heroes Tonight feat. Johnning, NCS). Use ONLY the supplied music: no generated tracks and no generated sound effects. Cut on the beat, put the track's drop on the video's key moment, fade out under the end card, mix to about -14 LUFS with a plain gain change, no clipping.
 - Every export gets a `DESCRIPTION.txt` and a README credit line: "Music: Janji - Heroes Tonight (feat. Johnning) [NCS Release] — ncs.io/ht".
-- Other tracks only if the owner supplies the files (the Drive folder "Music for F369Ai" was not readable from this session).
+- Other tracks only if the owner supplies the files (the Drive folder "Music for F369Ai" was not readable from this session). `assets/music/im_so_lucky_hardtekk.mp3` (Jeff Germita - IM SO LUCKY HARDTEKK) is the track chosen for the Nasdaq Flash video; its licence was not stated, so confirm before publishing and credit as "Music: Jeff Germita — IM SO LUCKY (HARDTEKK)".
 
 ## Real data only
 - Use only real stocks (tickers) and real automations the owner says they have actually used. Never invent a ticker, automation, result or number. If it is not provided, ask. Simulated numbers must be labelled as simulated.

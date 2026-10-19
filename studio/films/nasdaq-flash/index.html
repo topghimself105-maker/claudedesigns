@@ -6,8 +6,8 @@
 <script src="audio_map.js"></script>
 <script>
 // NASDAQ FLASH: 30 s, 16:9, 60 fps. Real Nasdaq tickers, our own automations (frames of our own films), illustrative charts.
-// Cut grid = 128 bpm (beat 0.46875 s); the track's drop lands on beat 16 (7.5 s). Every frame is a pure function of t. ?t=12 single frame.
-const q=new URLSearchParams(location.search),W=1920,H=1080,D=30,FPS=60,BEAT=60/128,TAU=Math.PI*2;
+// Cut grid = track tempo (156 bpm for the current track, beat 0.3846 s); the track's drop lands on beat 16 (6.15 s). Change BPM / ?bpm= for another track. Every frame is a pure function of t. ?t=12 single frame.
+const q=new URLSearchParams(location.search),W=1920,H=1080,D=30,FPS=60,BPM=+(q.get('bpm')||156),BEAT=60/BPM,TAU=Math.PI*2,TOTALB=D/BEAT,ENDB=Math.round(TOTALB-8);
 const cv=document.getElementById('c');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
 const buf=document.createElement('canvas');buf.width=W;buf.height=H;const bx=buf.getContext('2d');
 const C={bg:'#05080a',panel:'#0a1114',line:'#16262a',grid:'#12201f',mint:'#66f2c0',teal:'#19e6c1',red:'#ff4d57',w:'#f4fbf8',mu:'#7fa397',dim:'#40605a',up:'#19c29a',dn:'#ff4d57'};
@@ -45,9 +45,9 @@ const RES=[[20,21.5,'text',{w:'SCAN',sub:'FEEDS · TICKERS · SIGNALS',bg:'tape'
  [32,35,'counter',{n:5,label:'AUTOMATIONS BUILT'}],[40,43,'counter',{n:14,label:'NASDAQ TICKERS'}],[48,51,'text',{w:'RULES.',w2:'NOT GUESSES.',sub:'',bg:'burst'}]];
 const PAT=['chart','shot','ticket','chart','shot','tape','chart','grid'];
 let slot=34,pi=0;const resAt=b=>RES.find(r=>b>=r[0]&&b<r[1]);
-while(slot<112){const b=slot/2,r=resAt(b);if(r){if(Math.abs(b-r[0])<1e-6){add(r[0],r[1],r[2],r[3],{flash:r[2]==='text'?1:0});}slot=Math.max(slot+1,Math.round(r[1]*2));continue;}
+while(slot<ENDB*2){const b=slot/2,r=resAt(b);if(r){if(Math.abs(b-r[0])<1e-6){add(r[0],r[1],r[2],r[3],{flash:r[2]==='text'?1:0});}slot=Math.max(slot+1,Math.round(r[1]*2));continue;}
   const kind=PAT[pi++%PAT.length],p={};if(kind==='chart')p.t=nextT();if(kind==='shot')p.a=nextA();if(kind==='ticket'){p.t=nextT();p.side=R(slot,1)<.5?'BUY':'SELL';}add(b,b+.5,kind,p,{flash:slot%8===0?1:0});slot++;}
-add(56,64,'end',{});
+add(ENDB,TOTALB,'end',{});
 SCH.sort((a,b)=>a.t0-b.t0);
 const cutAt=t=>{let lo=0,hi=SCH.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(SCH[m].t0<=t)lo=m;else hi=m-1;}return SCH[lo];};
 
@@ -143,7 +143,7 @@ function frame(t){const cut=cutAt(t),u=clamp((t-cut.t0)/(cut.t1-cut.t0),0,1),lt=
   if(t>D-.6){ctx.globalAlpha=sst(D-.6,D-.02,t);ctx.fillStyle='#020405';ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
   // disclaimer plate (always on top)
   const m='Not financial advice. For educational purposes only. Simulated data.';ctx.font=`500 15px ${MONO}`;ctx.textAlign='center';const mw=ctx.measureText(m).width;ctx.fillStyle='rgba(2,4,5,.92)';ctx.fillRect(W/2-mw/2-16,H-38,mw+32,28);ctx.fillStyle='#c2d6cd';ctx.fillText(m,W/2,H-18);}
-window.TIMELINE={duration:D,fps:FPS,captions:SCH.filter(s=>s.kind==='text'||s.kind==='counter').map(s=>[s.t0,s.t1,[(s.p.w||String(s.p.n))+(s.p.w2?' '+s.p.w2:'')+(s.p.label?' '+s.p.label:'')]]),cues:[],markers:{drop:BEAT*16,end:BEAT*56,cuts:SCH.length}};
+window.TIMELINE={duration:D,fps:FPS,captions:SCH.filter(s=>s.kind==='text'||s.kind==='counter').map(s=>[s.t0,s.t1,[(s.p.w||String(s.p.n))+(s.p.w2?' '+s.p.w2:'')+(s.p.label?' '+s.p.label:'')]]),cues:[],markers:{drop:BEAT*16,end:BEAT*ENDB,cuts:SCH.length,bpm:BPM}};
 window.seek=t=>{frame(t);return true;};
 window.__ready.then(()=>{seek(+(q.get('t')||0));if(q.get('play')==='1'){const t0=performance.now();(function l(){seek(((performance.now()-t0)/1000)%D);requestAnimationFrame(l);})();}});
 </script></body></html>

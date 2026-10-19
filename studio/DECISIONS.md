@@ -42,3 +42,5 @@
 - No market-data access in this environment, so chart price action is ILLUSTRATIVE (seeded, indexed to 100, badge on screen) and no real quotes, P&L or results are shown. Order tickets show ticker + order type only.
 - 30 s = 16 bars at 128 bpm, 16:9 (YouTube, as for the F369 film). Music = Heroes Tonight only; window starts at 59.58 s so the track's silence-then-hit lands at 7.5 s (beat 16) = the drop/flash.
 - End card uses the owner's F369.AI brand mark.
+
+- nasdaq-flash music change: owner replaced Heroes Tonight with Jeff Germita - IM SO LUCKY (HARDTEKK) (156 bpm, 89.3 s). Cut window starts at 55.426 s so the second drop (61.58 s, after a 12-bar breakdown) lands on beat 16 (6.15 s). Licence not stated by the owner: flagged, not assumed.
