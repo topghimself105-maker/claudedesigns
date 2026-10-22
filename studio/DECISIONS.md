@@ -59,3 +59,7 @@
 ## Data to Order v2
 - Clusters are now spheres (balls of information) joined by a route; the spider carries each sphere's key result in a CARRYING box and ends on ORDER FILLED (simulated fill 0.25 pt slippage).
 - Music: owner-supplied Afro House mix, window 99.49 s -> 129.49 s, its drop at film 26.0 s = ORDER FILLED; -14.0 LUFS gain-only, peak -1.7 dBFS; 120 bpm, section cuts on the 0.5 s beat grid. Licence/credits unconfirmed.
+
+## ADT brand (X)
+- Chosen mark: option 29, fine-line wire globe with a rising chart line, ADT in thin caps (light grey, black ink, soft shadow). Files in brand/final: adt_avatar.png (1000x1000), adt_banner.png (1500x500), adt_card.png (1080x1350 end-card, with disclaimer), adt_wide.png (1920x1080). Source: brand/adt_final.html.
+- Trademark risk: ADT is an established security brand; check registers (EUIPO/USPTO/Benelux) before relying on the name.
