@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#111}canvas{display:block}</style></head><body><canvas id="c" width="1000" height="1000"></canvas><script>
+// ADT (AlgoDataTrading) profile-picture options. Palette: terracotta, cream, warm charcoal. Pick with ?v=1..5
+const v=+(new URLSearchParams(location.search).get('v')||1),c=document.getElementById('c'),x=c.getContext('2d'),W=1000,TAU=Math.PI*2;
+const T='#D97757',T2='#C15F3C',CR='#F4F1EA',CR2='#E6E0D3',DK='#1B1916',DK2='#2A2622',GR='#B0AEA5';
+const SERIF='"Bitstream Charter","Caladea","Liberation Serif",serif',SANS='"Inter Display","Inter",sans-serif';
+function fit(txt,font,w,ls){let s=400;x.font=font(s);if(x.letterSpacing!==undefined)x.letterSpacing=(ls||0)*s+'px';while(x.measureText(txt).width>w&&s>10){s-=4;x.font=font(s);if(x.letterSpacing!==undefined)x.letterSpacing=(ls||0)*s+'px';}return s;}
+function tc(txt,cx,cy,font,w,col,ls){const s=fit(txt,font,w,ls);x.fillStyle=col;x.textAlign='center';x.textBaseline='alphabetic';x.fillText(txt,cx+(ls?ls*s/2:0),cy);if(x.letterSpacing!==undefined)x.letterSpacing='0px';return s;}
+function ring(r,w,col,dash){x.strokeStyle=col;x.lineWidth=w;x.setLineDash(dash||[]);x.beginPath();x.arc(500,500,r,0,TAU);x.stroke();x.setLineDash([]);}
+function grain(a){for(let i=0;i<9000;i++){const h=Math.sin(i*12.9898)*43758.5453,f=h-Math.floor(h),g=Math.sin(i*78.233)*12345.678,k=g-Math.floor(g);x.fillStyle=`rgba(${f>.5?255:0},${f>.5?255:0},${f>.5?255:0},${a})`;x.fillRect(k*W,((f*997)%1)*W,1.5,1.5);}}
+function textOnArc(txt,r,a0,col,size,ls,inward){x.save();x.translate(500,500);x.font=`600 ${size}px ${SANS}`;x.fillStyle=col;x.textAlign='center';const n=txt.length,span=ls*(n-1);for(let i=0;i<n;i++){const a=a0+(i-(n-1)/2)*ls;x.save();x.rotate(a);x.translate(0,inward?r:-r);if(inward)x.rotate(Math.PI);x.fillText(txt[i],0,0);x.restore();}x.restore();}
+document.fonts.ready.then(()=>{
+if(v===1){ // wordmark in serif, terracotta tile, double rule, TM
+ x.fillStyle=T;x.fillRect(0,0,W,W);ring(452,5,CR);ring(432,1.5,CR);
+ tc('ADT',500,610,s=>`700 ${s}px ${SERIF}`,640,CR,-.02);x.fillStyle=CR;x.fillRect(250,660,500,3);
+ tc('ALGO  DATA  TRADING',500,730,s=>`600 ${s}px ${SANS}`,500,CR2,.18);x.font=`500 40px ${SANS}`;x.textAlign='left';x.fillStyle=CR;x.fillText('™',775,430);grain(.04);}
+if(v===2){ // candle A: letter A made of candlesticks
+ x.fillStyle=DK;x.fillRect(0,0,W,W);ring(455,3,GR+'66');
+ // candles forming A: left leg up, right leg down, crossbar line
+ const cs=[[300,720,.6],[345,640,.55],[392,560,.5],[438,470,.45],[500,380,.4],[562,470,.45],[608,560,.5],[655,640,.55],[700,720,.6]];
+ cs.forEach(([cx,cy,k],i)=>{const up=i<4||i===4,col=i<=4?T:CR;x.strokeStyle=col;x.lineWidth=5;x.beginPath();x.moveTo(cx,cy-120*k-40);x.lineTo(cx,cy+60);x.stroke();x.fillStyle=col;x.fillRect(cx-17,cy-70*k,34,150*k+20);});
+ x.strokeStyle=T;x.lineWidth=7;x.beginPath();x.moveTo(380,610);x.lineTo(620,610);x.stroke();
+ tc('ADT',500,830,s=>`700 ${s}px ${SANS}`,360,CR,.25);grain(.03);}
+if(v===3){ // seal / badge
+ x.fillStyle=CR;x.fillRect(0,0,W,W);ring(450,6,T);ring(432,2,T);ring(300,2,T);ring(284,5,T);
+ textOnArc('ALGO · DATA · TRADING · ',372,0,DK,46,TAU/25,false);
+ x.fillStyle=T;for(let i=0;i<24;i++){const a=i/24*TAU;x.beginPath();x.arc(500+Math.cos(a)*408,500+Math.sin(a)*408,3,0,TAU);x.fill();}
+ x.fillStyle=T;x.beginPath();x.arc(500,500,252,0,TAU);x.fill();tc('ADT',500,545,s=>`700 ${s}px ${SERIF}`,380,CR,-.02);x.fillStyle=CR;x.fillRect(360,570,280,3);tc('ALGODATATRADING',500,622,s=>`600 ${s}px ${SANS}`,300,CR2,.18);grain(.03);}
+if(v===4){ // block tile with up-tick notch
+ x.fillStyle=DK;x.fillRect(0,0,W,W);x.fillStyle=T;x.beginPath();x.roundRect(170,170,660,660,50);x.fill();
+ x.fillStyle=DK;x.beginPath();x.moveTo(830,170);x.lineTo(830,350);x.lineTo(650,170);x.fill();
+ x.strokeStyle=CR;x.lineWidth=14;x.lineCap='round';x.beginPath();x.moveTo(735,200);x.lineTo(800,200);x.lineTo(800,265);x.moveTo(800,200);x.lineTo(735,265);x.stroke();
+ tc('ADT',500,600,s=>`900 ${s}px ${SANS}`,480,CR,-.05);x.fillStyle=DK;x.fillRect(260,650,200,8);tc('ALGODATATRADING',500,725,s=>`600 ${s}px ${SANS}`,480,DK,.12);grain(.04);}
+if(v===5){ // italic serif ligature + rising line
+ x.fillStyle=DK2;x.fillRect(0,0,W,W);x.strokeStyle=T+'55';x.lineWidth=1.5;for(let i=1;i<10;i++){x.beginPath();x.moveTo(i*100,0);x.lineTo(i*100,W);x.stroke();x.beginPath();x.moveTo(0,i*100);x.lineTo(W,i*100);x.stroke();}
+ x.fillStyle=DK2;x.fillRect(120,300,760,400);tc('ADT',500,590,s=>`italic 700 ${s}px ${SERIF}`,640,CR,-.02);
+ x.strokeStyle=T;x.lineWidth=16;x.lineCap='round';x.lineJoin='round';x.beginPath();x.moveTo(170,720);x.lineTo(330,690);x.lineTo(430,730);x.lineTo(580,650);x.lineTo(690,690);x.lineTo(830,560);x.stroke();x.fillStyle=T;x.beginPath();x.arc(830,560,22,0,TAU);x.fill();
+ tc('ALGO DATA TRADING',500,810,s=>`600 ${s}px ${SANS}`,520,GR,.28);grain(.03);}
+window.done=true;});
+</script></body></html>
