@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#111}canvas{display:block}</style></head><body><canvas id="c" width="1000" height="1000"></canvas><script>
+// Logo marks for the X page. Warm terracotta / cream / charcoal. ?v=6..13
+const v=+(new URLSearchParams(location.search).get('v')||6),c=document.getElementById('c'),x=c.getContext('2d'),W=1000,TAU=Math.PI*2;
+const T='#D97757',CR='#F4F1EA',DK='#1B1916',DK2='#2A2622',GR='#B0AEA5',SANS='"Inter Display","Inter",sans-serif';
+const bg=col=>{x.fillStyle=col;x.fillRect(0,0,W,W);};
+function grain(a){for(let i=0;i<9000;i++){const h=Math.sin(i*12.9898)*43758.5453,f=h-Math.floor(h),g=Math.sin(i*78.233)*12345.678,k=g-Math.floor(g);x.fillStyle=`rgba(${f>.5?255:0},${f>.5?255:0},${f>.5?255:0},${a})`;x.fillRect(k*W,((f*997)%1)*W,1.5,1.5);}}
+x.lineCap='round';x.lineJoin='round';
+document.fonts.ready.then(()=>{
+if(v===6){bg(CR); // fill ring: ring with a gap, order dot at the end
+ x.strokeStyle=T;x.lineWidth=110;x.beginPath();x.arc(500,500,250,-Math.PI*.12,Math.PI*1.38);x.stroke();x.fillStyle=DK;x.beginPath();x.arc(500+Math.cos(-Math.PI*.38)*250,500+Math.sin(-Math.PI*.38)*250,52,0,TAU);x.fill();}
+if(v===7){bg(T); // rising bars, last one cut diagonally
+ x.fillStyle=CR;[[260,560,100,200],[400,470,100,290],[540,380,100,380]].forEach(([bx,by,bw,bh])=>{x.beginPath();x.roundRect(bx,by,bw,bh,16);x.fill();});
+ x.fillStyle=DK;x.beginPath();x.moveTo(680,300);x.lineTo(780,300);x.lineTo(780,760);x.lineTo(680,760);x.closePath();x.fillStyle=CR;x.fill();x.fillStyle=T;x.beginPath();x.moveTo(660,330);x.lineTo(800,330);x.lineTo(660,470);x.fill();}
+if(v===8){bg(DK); // delta: triangle with order line through it
+ x.strokeStyle=T;x.lineWidth=70;x.beginPath();x.moveTo(500,170);x.lineTo(800,740);x.lineTo(200,740);x.closePath();x.stroke();x.fillStyle=T;x.fillRect(335,560,330,60);x.fillStyle=T;x.beginPath();x.arc(500,170,34,0,TAU);x.fill();x.fillStyle=CR;x.beginPath();x.arc(500,170,12,0,TAU);x.fill();}
+if(v===9){bg(DK); // candle with order tick
+ x.strokeStyle=T;x.lineWidth=26;x.beginPath();x.moveTo(500,140);x.lineTo(500,860);x.stroke();x.fillStyle=T;x.beginPath();x.roundRect(380,300,240,400,30);x.fill();
+ x.strokeStyle=CR;x.lineWidth=10;x.setLineDash([2,22]);x.beginPath();x.moveTo(120,420);x.lineTo(880,420);x.stroke();x.setLineDash([]);x.fillStyle=CR;x.beginPath();x.moveTo(880,420);x.lineTo(820,385);x.lineTo(820,455);x.fill();}
+if(v===10){bg(CR); // D with a T bar: one shared stem
+ x.fillStyle=T;x.beginPath();x.moveTo(380,260);x.lineTo(500,260);x.arc(500,500,240,-Math.PI/2,Math.PI/2);x.lineTo(380,740);x.closePath();x.fill();
+ x.fillStyle=DK;x.fillRect(300,170,430,96);x.fillRect(332,170,96,570);x.fillStyle=CR;x.beginPath();x.arc(500,500,95,-Math.PI/2,Math.PI/2);x.lineTo(430,595);x.lineTo(430,405);x.closePath();x.fill();}
+if(v===11){bg(DK); // loop / infinity with centre dot
+ x.strokeStyle=T;x.lineWidth=90;x.beginPath();for(let i=0;i<=200;i++){const a=i/200*TAU,d=1+Math.sin(a)**2,px=500+330*Math.cos(a)/d*1.15,py=500+330*Math.sin(a)*Math.cos(a)/d*1.15;i?x.lineTo(px,py):x.moveTo(px,py);}x.closePath();x.stroke();x.fillStyle=CR;x.beginPath();x.arc(500,500,44,0,TAU);x.fill();}
+if(v===12){bg(DK); // dot grid forming an A
+ const A=['00100','01010','10001','11111','10001'];for(let r=0;r<5;r++)for(let q=0;q<5;q++){const on=A[r][q]==='1';x.fillStyle=on?T:'#3a342e';x.beginPath();x.arc(200+q*150,200+r*150,on?52:26,0,TAU);x.fill();}}
+if(v===13){bg(DK); // lowercase wordmark
+ x.font=`900 330px ${SANS}`;if(x.letterSpacing!==undefined)x.letterSpacing='-14px';x.textAlign='left';const w=x.measureText('adt').width;x.fillStyle=CR;x.fillText('adt',500-(w+90)/2,640);x.fillStyle=T;x.fillRect(500-(w+90)/2+w+16,572,70,70);if(x.letterSpacing!==undefined)x.letterSpacing='0px';
+ x.font=`500 40px ${SANS}`;x.fillStyle=GR;x.textAlign='center';if(x.letterSpacing!==undefined)x.letterSpacing='12px';x.fillText('ALGO DATA TRADING',506,740);if(x.letterSpacing!==undefined)x.letterSpacing='0px';}
+grain(.03);window.done=true;});
+</script></body></html>
