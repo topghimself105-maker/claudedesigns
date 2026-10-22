@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#111}canvas{display:block}</style></head><body><canvas id="c" width="1000" height="1000"></canvas><script>
+// Logo marks, batch 2. ?v=14..21
+const v=+(new URLSearchParams(location.search).get('v')||14),c=document.getElementById('c'),x=c.getContext('2d'),W=1000,TAU=Math.PI*2;
+const T='#D97757',CR='#F4F1EA',DK='#1B1916',GR='#B0AEA5',SG='#8FA391',DG='#22352F',SANS='"Inter Display","Inter",sans-serif',SERIF='"Bitstream Charter","Caladea",serif';
+const bg=col=>{x.fillStyle=col;x.fillRect(0,0,W,W);};
+function grain(a){for(let i=0;i<9000;i++){const h=Math.sin(i*12.9898)*43758.5453,f=h-Math.floor(h),g=Math.sin(i*78.233)*12345.678,k=g-Math.floor(g);x.fillStyle=`rgba(${f>.5?255:0},${f>.5?255:0},${f>.5?255:0},${a})`;x.fillRect(k*W,((f*997)%1)*W,1.5,1.5);}}
+x.lineCap='round';x.lineJoin='round';
+document.fonts.ready.then(()=>{
+if(v===14){bg(DK); // minimal spider: body + 8 legs
+ x.strokeStyle=T;x.lineWidth=24;for(let s=-1;s<=1;s+=2)for(let i=0;i<4;i++){const y0=420+i*50,dx=s*(150+i*28),yk=y0-170+i*38;x.beginPath();x.moveTo(500+s*40,y0);x.quadraticCurveTo(500+dx*.9,yk-40,500+dx*1.35,yk+240-i*10);x.stroke();}
+ x.fillStyle=T;x.beginPath();x.ellipse(500,500,70,115,0,0,TAU);x.fill();x.fillStyle=DK;x.beginPath();x.moveTo(500,440);x.lineTo(530,500);x.lineTo(500,560);x.lineTo(470,500);x.fill();x.fillStyle=T;x.beginPath();x.ellipse(500,330,42,50,0,0,TAU);x.fill();}
+if(v===15){bg(CR); // hexagon with candle
+ x.fillStyle=DK;x.beginPath();for(let i=0;i<6;i++){const a=Math.PI/6+i*TAU/6;x.lineTo(500+Math.cos(a)*400,500+Math.sin(a)*400);}x.closePath();x.fill();
+ x.strokeStyle=T;x.lineWidth=22;x.beginPath();x.moveTo(500,230);x.lineTo(500,770);x.stroke();x.fillStyle=T;x.beginPath();x.roundRect(420,350,160,300,22);x.fill();x.fillStyle=CR;x.fillRect(420,490,160,10);}
+if(v===16){bg(DG); // crest with A and rising line
+ x.fillStyle=CR;x.beginPath();x.moveTo(500,120);x.lineTo(820,210);x.lineTo(820,520);x.quadraticCurveTo(820,730,500,880);x.quadraticCurveTo(180,730,180,520);x.lineTo(180,210);x.closePath();x.fill();
+ x.fillStyle=DG;x.beginPath();x.moveTo(500,215);x.lineTo(740,280);x.lineTo(740,510);x.quadraticCurveTo(740,670,500,790);x.quadraticCurveTo(260,670,260,510);x.lineTo(260,280);x.closePath();x.fill();
+ x.strokeStyle=CR;x.lineWidth=36;x.beginPath();x.moveTo(380,620);x.lineTo(500,330);x.lineTo(620,620);x.stroke();x.strokeStyle=T;x.lineWidth=22;x.beginPath();x.moveTo(330,560);x.lineTo(430,540);x.lineTo(500,590);x.lineTo(670,420);x.stroke();}
+if(v===17){bg(DK); // app-icon tile, A cut out, up-tick
+ x.fillStyle=T;x.beginPath();x.roundRect(130,130,740,740,170);x.fill();x.fillStyle=DK;x.beginPath();x.moveTo(500,260);x.lineTo(720,740);x.lineTo(610,740);x.lineTo(565,640);x.lineTo(435,640);x.lineTo(390,740);x.lineTo(280,740);x.closePath();x.fill();x.fillStyle=T;x.beginPath();x.moveTo(500,400);x.lineTo(540,555);x.lineTo(460,555);x.closePath();x.fill();
+ x.strokeStyle=CR;x.lineWidth=16;x.beginPath();x.moveTo(740,330);x.lineTo(790,280);x.lineTo(790,340);x.moveTo(790,280);x.lineTo(730,280);x.stroke();}
+if(v===18){bg(CR); // signal arcs + dot
+ x.strokeStyle=DK;x.lineCap='round';[110,190,270,350].forEach((r,i)=>{x.lineWidth=46;x.globalAlpha=1-i*.16;x.beginPath();x.arc(250,750,r,-Math.PI*.5,0);x.stroke();});x.globalAlpha=1;x.fillStyle=T;x.beginPath();x.arc(250,750,64,0,TAU);x.fill();}
+if(v===19){bg(T); // rising chevrons
+ x.strokeStyle=CR;x.lineWidth=70;[0,1,2].forEach(i=>{x.globalAlpha=.4+.3*i;x.beginPath();x.moveTo(260,620-i*150+160);x.lineTo(500,380-i*150+160);x.lineTo(740,620-i*150+160);x.stroke();});x.globalAlpha=1;}
+if(v===20){bg(DK); // crosshair: precise entry
+ x.strokeStyle=CR;x.lineWidth=14;x.beginPath();x.arc(500,500,300,0,TAU);x.stroke();x.strokeStyle=T;x.lineWidth=22;[[500,130,500,260],[500,740,500,870],[130,500,260,500],[740,500,870,500]].forEach(l=>{x.beginPath();x.moveTo(l[0],l[1]);x.lineTo(l[2],l[3]);x.stroke();});x.fillStyle=T;x.beginPath();x.arc(500,500,70,0,TAU);x.fill();x.fillStyle=DK;x.beginPath();x.arc(500,500,24,0,TAU);x.fill();}
+if(v===21){bg(SG); // stacked type poster
+ x.fillStyle=DK;x.textAlign='left';x.textBaseline='alphabetic';x.font=`900 215px ${SANS}`;if(x.letterSpacing!==undefined)x.letterSpacing='-8px';['ALGO','DATA','TRADE'].forEach((t,i)=>{x.fillStyle=i===2?T:DK;x.fillText(t,130,330+i*215);});if(x.letterSpacing!==undefined)x.letterSpacing='0px';}
+grain(.03);window.done=true;});
+</script></body></html>
