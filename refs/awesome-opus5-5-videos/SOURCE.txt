@@ -1,0 +1,1 @@
+Source: https://github.com/yihui-dev/awesome-opus5-5-videos @ 92aee2f (MIT). Copied 2026-10-28.
