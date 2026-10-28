@@ -34,7 +34,7 @@ function hline(x0,y,x1,p,lw,col){wire(lw||2,col);x.beginPath();x.moveTo(x0,y);x.
 function rail(t){const a=sst(SEC[1].a-.3,SEC[1].a+.2,t)*(1-sst(SEC[5].a-.2,SEC[5].a+.3,t));if(a<=0)return;x.save();x.globalAlpha=a;const xs=[90,250,410,570],y=120,cur=SEC.findIndex(s=>t>=s.a&&t<s.b)-1;
  hline(90,y,570,1,2,FAINT);xs.forEach((px,i)=>{const on=i===cur,done=i<cur;const pul=on?1+.08*Math.exp(-((t%(BAR/4))/(BAR/4))*6):1;wire(2.5);x.fillStyle=on?ACC:(done?INK:DARK);x.beginPath();x.arc(px,y,16*pul,0,TAU);x.fill();x.stroke();flat();txt(String(i+1),px,y+6,16,500,on||done?'#001A10':INK,0,'center');});
  x.save();x.shadowColor='rgba(31,219,138,.7)';x.shadowBlur=10;x.font=`700 22px ${MONO}`;x.fillStyle=INK;x.textAlign='right';if(x.letterSpacing!==undefined)x.letterSpacing='5px';x.fillText('SENTINEL',W-90,y+8);x.restore();if(x.letterSpacing!==undefined)x.letterSpacing='0px';x.restore();}
-function disclaimer(){x.save();txt('Not financial advice. For educational purposes only. Simulated data.',W/2,H-34,18,400,MUTE,0,'center');x.restore();}
+function disclaimer(){x.save();x.fillStyle='rgba(0,13,9,.94)';x.fillRect(0,H-66,W,66);txt('Not financial advice. For educational purposes only. Simulated data.',W/2,H-34,18,400,MUTE,0,'center');x.restore();}
 // ---------- scenes (local time l, progress u) ----------
 function sTitle(l){globe(540,470,230,4.5,l/2.2);wipe('How a trading automation',90,880,66,300,INK,(l-1.0)/.8,-1.5);wipe('places one exact order',90,958,66,300,INK,(l-1.35)/.8,-1.5);wipe('Four steps, from a trade log to a filled order on NQ futures.',90,1030,26,400,MUTE,(l-1.9)/.9);}
 function head(n,title,sub,l){wipe(title,90,262,64,300,INK,l/.7,-1.5);wipe(sub,90,316,26,400,MUTE,(l-.3)/.7);}
