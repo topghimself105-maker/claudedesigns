@@ -68,3 +68,8 @@
 - Account renamed to The Sentinel (wordmark SENTINEL): the watcher that never sleeps (Matrix sentinels; also "a guard on watch"). Same mark: wire globe + rising line, light grey, Inter thin.
 - New files in brand/final: sentinel_avatar/banner/banner2/banner3/card/wide/post_steps.png. ADT files kept for reference. Order Steps video re-rendered with the new name.
 - "Sentinel" is a common brand word (e.g. SentinelOne in cybersecurity): check handles and trademark registers before relying on it.
+
+## The Sentinel, final look (code rain)
+- Chosen: code-rain direction, variant A (bold mono S in an open ring with an order dot; SENTINEL in bold DejaVu Sans Mono with a green glow; "The market is code. Read it.").
+- Palette: #000D09 -> #03261C background, #1FDB8A green, #DFFFEF heads/text, #8FD9B6 body. Rain glyphs: IPAGothic katakana + digits, seeded.
+- Files: brand/final/sentinel_final_{avatar,banner,card,wide}.png, sentinel_post_steps.png; sources brand/sentinel_rain.html (v=4) and brand/sentinel_post_steps.html. Order Steps re-themed (emblem replaces the globe, animated rain).

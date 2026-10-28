@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#111}canvas{display:block}</style></head><body><canvas id="c"></canvas><script>
 // The Sentinel, code-rain finals. ?v=1|2|3 &m=avatar|banner
-const Q=new URLSearchParams(location.search),v=+(Q.get('v')||1),m=Q.get('m')||'avatar',[W,H]=m==='avatar'?[1000,1000]:[1500,500],c=document.getElementById('c');c.width=W;c.height=H;const x=c.getContext('2d'),TAU=Math.PI*2;
+const Q=new URLSearchParams(location.search),v=+(Q.get('v')||1),m=Q.get('m')||'avatar',[W,H]={avatar:[1000,1000],banner:[1500,500],card:[1080,1350],wide:[1920,1080]}[m],c=document.getElementById('c');c.width=W;c.height=H;const x=c.getContext('2d'),TAU=Math.PI*2;
 function R(a,b){let q=(Math.imul(a|0,374761393)+Math.imul((b|0)+7919,668265263))|0;q=Math.imul(q^(q>>>13),1274126177);q^=q>>>16;return (q>>>0)/4294967296;}
 const GL='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワ0123456789',JP='IPAGothic,monospace',MONO='"DejaVu Sans Mono",monospace',SERIF='"Bitstream Charter",serif',SANS='Inter,sans-serif';
 const HEAD='#DFFFEF',GRN='#1FDB8A',DEEP='#01140F';
@@ -24,8 +24,13 @@ function v3(){bg();if(m==='avatar'){rain(16,48,80,.25);mosaic('S',`900 760px ${S
 function plate(r){x.fillStyle='rgba(0,13,9,.78)';x.beginPath();x.arc(500,500,r,0,TAU);x.fill();}
 function banner(name,font,ls,tag,tagFont,seed){rain(30,36,seed);const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,'rgba(0,13,9,.3)');g.addColorStop(.37,'rgba(0,13,9,.9)');g.addColorStop(.72,'rgba(0,13,9,.3)');x.fillStyle=g;x.fillRect(0,0,W,H);
  x.save();x.font=font;x.fillStyle=HEAD;x.textAlign='center';if(x.letterSpacing!==undefined)x.letterSpacing=ls+'px';x.shadowColor='rgba(31,219,138,.8)';x.shadowBlur=40;x.fillText(name,560+ls/2,280);x.restore();T(tag,560,340,22,400,tagFont,GRN,3);}
-// 4: mono S, double ring with a gap + order dot
-function v4(){bg();if(m==='avatar'){rain(11,64,140);plate(300);x.strokeStyle=GRN;x.lineWidth=4;x.beginPath();x.arc(500,500,300,-Math.PI*.32,Math.PI*1.62);x.stroke();x.strokeStyle='rgba(31,219,138,.45)';x.lineWidth=2;x.beginPath();x.arc(500,500,276,0,TAU);x.stroke();
+// 4 (chosen): mono S, ring with a gap + order dot. emblem() draws it at any centre/scale.
+function emblem(cx,cy,s){x.save();x.translate(cx,cy);x.scale(s,s);x.fillStyle='rgba(0,13,9,.78)';x.beginPath();x.arc(0,0,300,0,TAU);x.fill();x.strokeStyle=GRN;x.lineWidth=4;x.beginPath();x.arc(0,0,300,-Math.PI*.32,Math.PI*1.62);x.stroke();x.strokeStyle='rgba(31,219,138,.45)';x.lineWidth=2;x.beginPath();x.arc(0,0,276,0,TAU);x.stroke();
+ x.save();x.shadowColor='rgba(120,255,190,1)';x.shadowBlur=24;x.fillStyle=HEAD;x.beginPath();x.arc(Math.cos(-Math.PI*.4)*300,Math.sin(-Math.PI*.4)*300,16,0,TAU);x.fill();x.restore();x.restore();T('S',cx,cy+140*s,400*s,700,MONO,HEAD,0,'rgba(31,219,138,.85)');}
+function disc(y,sz){T('Not financial advice. For educational purposes only. Simulated data.',W/2,y,sz,400,SANS,'rgba(143,217,182,.85)',0);}
+function v4(){bg();if(m==='card'){rain(14,52,140,.65);{const g=x.createLinearGradient(0,860,0,1160);g.addColorStop(0,'rgba(0,13,9,0)');g.addColorStop(.25,'rgba(0,13,9,.97)');g.addColorStop(.75,'rgba(0,13,9,.97)');g.addColorStop(1,'rgba(0,13,9,0)');x.fillStyle=g;x.fillRect(0,860,W,300);x.fillStyle='rgba(0,13,9,.98)';x.fillRect(0,1262,W,88);}emblem(540,500,.85);T('SENTINEL',540,1000,92,700,MONO,HEAD,18,'rgba(31,219,138,.8)');T('The market is code. Read it.',540,1068,26,400,MONO,GRN,2);disc(1300,20);vign(.5);return;}
+ if(m==='wide'){rain(26,44,145,.7);const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,'rgba(0,13,9,.3)');g.addColorStop(.55,'rgba(0,13,9,.9)');g.addColorStop(1,'rgba(0,13,9,.5)');x.fillStyle=g;x.fillRect(0,0,W,H);emblem(560,520,1);T('SENTINEL',1310,560,120,700,MONO,HEAD,24,'rgba(31,219,138,.8)');T('The market is code. Read it.',1310,640,30,400,MONO,GRN,2);disc(1040,22);vign(.5);return;}
+ if(m==='avatar'){rain(11,64,140);plate(300);x.strokeStyle=GRN;x.lineWidth=4;x.beginPath();x.arc(500,500,300,-Math.PI*.32,Math.PI*1.62);x.stroke();x.strokeStyle='rgba(31,219,138,.45)';x.lineWidth=2;x.beginPath();x.arc(500,500,276,0,TAU);x.stroke();
  x.save();x.shadowColor='rgba(120,255,190,1)';x.shadowBlur=24;x.fillStyle=HEAD;x.beginPath();x.arc(500+Math.cos(-Math.PI*.4)*300,500+Math.sin(-Math.PI*.4)*300,16,0,TAU);x.fill();x.restore();T('S',500,640,400,700,MONO,HEAD,0,'rgba(31,219,138,.85)');}
  else banner('SENTINEL',`700 104px ${MONO}`,20,'The market is code. Read it.',MONO,150);vign(.55);}
 // 5: thin S (same family as the wordmark) in a radar ring with sweep

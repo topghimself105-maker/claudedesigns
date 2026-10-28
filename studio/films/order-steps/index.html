@@ -1,37 +1,39 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Order Steps</title>
-<style>html,body{margin:0;background:#e6e6e7;height:100%}canvas{display:block;margin:0 auto;max-width:100vw;max-height:100vh}</style></head>
+<style>html,body{margin:0;background:#000D09;height:100%}canvas{display:block;margin:0 auto;max-width:100vw;max-height:100vh}</style></head>
 <body><canvas id="c"></canvas>
 <script>
 // ORDER STEPS (The Sentinel): how a trading automation places one exact order, in four steps. 1080x1350 (4:5, X), 60 fps, 24.375 s = 13 bars at 128 bpm.
-// Sentinel brand: light grey, black fine-line "wire" with a soft drop shadow, Inter thin, one green accent. All numbers simulated. Every frame is a pure function of t.
+// Sentinel brand: deep green-black with falling code rain, light-green fine lines with a glow, mono S emblem, Matrix green accent. All numbers simulated. Every frame is a pure function of t.
 const q=new URLSearchParams(location.search),W=1080,H=1350,FPS=60,BPM=128,BAR=240/BPM,D=13*BAR,TAU=Math.PI*2;
 const cv=document.getElementById('c');cv.width=W;cv.height=H;const x=cv.getContext('2d');
-const INK='#141414',MUTE='#5B5B5F',FAINT='rgba(20,20,20,.16)',ACC='#0F7B5F',S='Inter,sans-serif';
+const INK='#DFFFEF',MUTE='#8FD9B6',FAINT='rgba(31,219,138,.22)',ACC='#1FDB8A',S='Inter,sans-serif',MONO='"DejaVu Sans Mono",monospace',DARK='#02170F';
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),lerp=(a,b,t)=>a+(b-a)*t,sst=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t)},eo=t=>1-Math.pow(1-clamp(t,0,1),3);
+const mod=(v,m)=>((v%m)+m)%m;
 // sections in bars
 const SEC=[['title',0,2],['data',2,4],['edge',4,6],['rules',6,8],['order',8,10.5],['end',10.5,13]].map(([k,a,b])=>({k,a:a*BAR,b:b*BAR}));
 const FILL=9*BAR;
 // ---------- helpers ----------
 function txt(s,px,py,sz,wt,col,ls,al){x.font=`${wt} ${sz}px ${S}`;x.fillStyle=col;x.textAlign=al||'left';x.textBaseline='alphabetic';if(x.letterSpacing!==undefined)x.letterSpacing=(ls||0)+'px';x.fillText(s,px,py);if(x.letterSpacing!==undefined)x.letterSpacing='0px';}
-function wire(lw,col){x.strokeStyle=col||INK;x.lineWidth=lw;x.lineCap='round';x.lineJoin='round';x.shadowColor='rgba(0,0,0,.22)';x.shadowBlur=7;x.shadowOffsetY=6;}
+function wire(lw,col){x.strokeStyle=col||INK;x.lineWidth=lw;x.lineCap='round';x.lineJoin='round';x.shadowColor='rgba(31,219,138,.45)';x.shadowBlur=10;x.shadowOffsetY=0;}
 function flat(){x.shadowColor='transparent';x.shadowBlur=0;x.shadowOffsetY=0;}
 function dash(len,p){x.setLineDash([Math.max(.01,len*clamp(p,0,1)),len+10]);}
 function nodash(){x.setLineDash([]);}
 // text that wipes in from the left
 function wipe(s,px,py,sz,wt,col,p,ls,al){if(p<=0)return;x.save();x.font=`${wt} ${sz}px ${S}`;if(x.letterSpacing!==undefined)x.letterSpacing=(ls||0)+'px';const w=x.measureText(s).width,l=al==='center'?px-w/2:(al==='right'?px-w:px);x.beginPath();x.rect(l-4,py-sz*1.1,(w+8)*eo(p),sz*1.5);x.clip();x.globalAlpha*=clamp(p*3,0,1);txt(s,px,py+(1-eo(p))*10,sz,wt,col,ls,al);x.restore();}
-function globe(cx,cy,R,lw,p){wire(lw);const L=TAU*R;dash(L,p/.4);x.beginPath();x.arc(cx,cy,R,-Math.PI/2,1.5*Math.PI);x.stroke();
- [.35,.7].forEach((k,i)=>{dash(L,(p-.2-i*.08)/.35);x.beginPath();x.ellipse(cx,cy,R*k,R,0,-Math.PI/2,1.5*Math.PI);x.stroke();});
- [-.5,0,.5].forEach((l,i)=>{dash(L,(p-.35-i*.06)/.3);x.beginPath();x.ellipse(cx,cy+l*R,R*Math.sqrt(1-l*l),R*.1,0,Math.PI,3*Math.PI);x.stroke();});
- const P=[[-.82,.42],[-.56,.3],[-.38,.37],[-.15,.12],[.06,.17],[.38,-.12],[.58,-.06],[.78,-.28]];wire(lw*1.9,ACC);dash(R*2.6,(p-.6)/.4);x.beginPath();P.forEach((q,i)=>i?x.lineTo(cx+q[0]*R,cy+q[1]*R):x.moveTo(cx+q[0]*R,cy+q[1]*R));x.stroke();nodash();flat();}
+function globe(cx,cy,R,lw,p){ // the Sentinel emblem: open ring + order dot + mono S, drawn on
+ wire(lw,ACC);const a0=-Math.PI*.32,a1=Math.PI*1.62;dash(R*(a1-a0),p/.45);x.beginPath();x.arc(cx,cy,R,a0,a1);x.stroke();nodash();
+ const k2=sst(.25,.6,p);if(k2>0){x.save();x.globalAlpha*=k2;wire(lw*.5,'rgba(31,219,138,.5)');x.beginPath();x.arc(cx,cy,R*.92,0,TAU);x.stroke();x.restore();}flat();
+ const kd=sst(.45,.6,p);if(kd>0){x.save();x.shadowColor='rgba(120,255,190,1)';x.shadowBlur=22;x.fillStyle=INK;x.beginPath();x.arc(cx+Math.cos(-Math.PI*.4)*R,cy+Math.sin(-Math.PI*.4)*R,R*.055*kd,0,TAU);x.fill();x.restore();}
+ const ks=sst(.5,.95,p);if(ks>0){x.save();x.globalAlpha*=ks;x.shadowColor='rgba(31,219,138,.85)';x.shadowBlur=R*.3;x.font=`700 ${R*1.33}px ${MONO}`;x.fillStyle=INK;x.textAlign='center';x.translate(cx,cy+R*.47);const sc=.9+.1*ks;x.scale(sc,sc);x.fillText('S',0,0);x.restore();}}
 function check(cx,cy,r,p,ok){wire(3);dash(TAU*r,p/.6);x.beginPath();x.arc(cx,cy,r,-Math.PI/2,1.5*Math.PI);x.stroke();nodash();if(p>.6){const k=eo((p-.6)/.4);wire(4,ok===false?'#B3261E':ACC);x.beginPath();x.moveTo(cx-r*.42,cy+r*.02);const a=[cx-r*.1,cy+r*.34],b=[cx+r*.46,cy-r*.32];if(k<.4){const u=k/.4;x.lineTo(lerp(cx-r*.42,a[0],u),lerp(cy+r*.02,a[1],u));}else{x.lineTo(a[0],a[1]);const u=(k-.4)/.6;x.lineTo(lerp(a[0],b[0],u),lerp(a[1],b[1],u));}x.stroke();}flat();}
-function box(px,py,w,h,p,lw){wire(lw||3);dash(2*(w+h),p);x.beginPath();x.moveTo(px,py);x.lineTo(px+w,py);x.lineTo(px+w,py+h);x.lineTo(px,py+h);x.closePath();x.stroke();nodash();flat();}
+function box(px,py,w,h,p,lw){if(p>0){x.save();x.globalAlpha*=clamp(p*2,0,1);x.fillStyle='rgba(1,16,11,.9)';x.fillRect(px,py,w,h);x.restore();}wire(lw||3);dash(2*(w+h),p);x.beginPath();x.moveTo(px,py);x.lineTo(px+w,py);x.lineTo(px+w,py+h);x.lineTo(px,py+h);x.closePath();x.stroke();nodash();flat();}
 function hline(x0,y,x1,p,lw,col){wire(lw||2,col);x.beginPath();x.moveTo(x0,y);x.lineTo(lerp(x0,x1,eo(p)),y);x.stroke();flat();}
 // ---------- chrome: progress rail + disclaimer ----------
 function rail(t){const a=sst(SEC[1].a-.3,SEC[1].a+.2,t)*(1-sst(SEC[5].a-.2,SEC[5].a+.3,t));if(a<=0)return;x.save();x.globalAlpha=a;const xs=[90,250,410,570],y=120,cur=SEC.findIndex(s=>t>=s.a&&t<s.b)-1;
- hline(90,y,570,1,2,FAINT);xs.forEach((px,i)=>{const on=i===cur,done=i<cur;const pul=on?1+.08*Math.exp(-((t%(BAR/4))/(BAR/4))*6):1;wire(2.5);x.fillStyle=on?ACC:(done?INK:'#EDEDEE');x.beginPath();x.arc(px,y,16*pul,0,TAU);x.fill();x.stroke();flat();txt(String(i+1),px,y+6,16,500,on||done?'#F4F6F5':INK,0,'center');});
- txt('SENTINEL',W-90,y+8,24,200,INK,7,'right');x.restore();}
+ hline(90,y,570,1,2,FAINT);xs.forEach((px,i)=>{const on=i===cur,done=i<cur;const pul=on?1+.08*Math.exp(-((t%(BAR/4))/(BAR/4))*6):1;wire(2.5);x.fillStyle=on?ACC:(done?INK:DARK);x.beginPath();x.arc(px,y,16*pul,0,TAU);x.fill();x.stroke();flat();txt(String(i+1),px,y+6,16,500,on||done?'#001A10':INK,0,'center');});
+ x.save();x.shadowColor='rgba(31,219,138,.7)';x.shadowBlur=10;x.font=`700 22px ${MONO}`;x.fillStyle=INK;x.textAlign='right';if(x.letterSpacing!==undefined)x.letterSpacing='5px';x.fillText('SENTINEL',W-90,y+8);x.restore();if(x.letterSpacing!==undefined)x.letterSpacing='0px';x.restore();}
 function disclaimer(){x.save();txt('Not financial advice. For educational purposes only. Simulated data.',W/2,H-34,18,400,MUTE,0,'center');x.restore();}
 // ---------- scenes (local time l, progress u) ----------
 function sTitle(l){globe(540,470,230,4.5,l/2.2);wipe('How a trading automation',90,880,66,300,INK,(l-1.0)/.8,-1.5);wipe('places one exact order',90,958,66,300,INK,(l-1.35)/.8,-1.5);wipe('Four steps, from a trade log to a filled order on NQ futures.',90,1030,26,400,MUTE,(l-1.9)/.9);}
@@ -46,7 +48,7 @@ function sEdge(l){head(2,'Find the edge','Expectancy per setup, from the trade l
  const p=(l-1.7)/.6;if(p>0){x.save();x.globalAlpha=clamp(p,0,1);txt('+0.44R',540,760+(1-eo(p))*16,170,200,ACC,-4,'center');x.restore();}wipe('per trade, on average (simulated)',540,820,24,400,MUTE,(l-2.0)/.6,0,'center');
  // number line -1R .. +1R with marker
  const x0=140,x1=940,y=980,px=v=>lerp(x0,x1,(v+1)/2);hline(x0,y,x1,(l-1.6)/.7,2.5);[-1,0,1].forEach(v=>{const a=sst(1.9,2.2,l);x.save();x.globalAlpha=a;wire(2);x.beginPath();x.moveTo(px(v),y-14);x.lineTo(px(v),y+14);x.stroke();flat();txt((v>0?'+':v<0?'−':'')+Math.abs(v)+'R',px(v),y+52,22,400,MUTE,0,'center');x.restore();});
- const mk=eo((l-2.2)/.9),mv=lerp(0,.44,mk);if(l>2.2){wire(3,ACC);x.fillStyle='#EDEDEE';x.beginPath();x.arc(px(mv),y,15,0,TAU);x.fill();x.stroke();flat();x.fillStyle=ACC;x.beginPath();x.arc(px(mv),y,6,0,TAU);x.fill();}
+ const mk=eo((l-2.2)/.9),mv=lerp(0,.44,mk);if(l>2.2){wire(3,ACC);x.fillStyle=DARK;x.beginPath();x.arc(px(mv),y,15,0,TAU);x.fill();x.stroke();flat();x.fillStyle=ACC;x.beginPath();x.arc(px(mv),y,6,0,TAU);x.fill();}
  wipe('Positive expectancy = an edge worth trading.',540,1110,26,400,INK,(l-2.8)/.6,0,'center');}
 const RULES=['The setup is in the journal','Expectancy is above zero','Inside the session window','No high-impact news soon','Risk per trade: 0.5% of the account'];
 function sRules(l){head(3,'Check the rules','Every rule must pass before an order.',l);RULES.forEach((r,i)=>{const t0=.6+i*.42,y=440+i*120;if(l<t0-.05)return;check(130,y,26,(l-t0)/.5);wipe(r,190,y+10,32,300,INK,(l-t0-.1)/.5);hline(190,y+50,990,(l-t0-.2)/.6,1,FAINT);});
@@ -56,18 +58,21 @@ function sOrder(l,t){head(4,'Send the order','Size comes from the risk, not from
  box(90,480,900,520,(l-.8)/1.1,3.5);const rows=[['NQ · Nasdaq-100 futures','LONG'],['Entry (limit)','21,480.00'],['Stop','21,455.00'],['Target 5R','21,605.00'],['Size','1 contract']];
  rows.forEach((r,i)=>{const y=560+i*86,p=(l-1.1-i*.18)/.4;wipe(r[0],130,y,i?28:32,i?400:500,i?MUTE:INK,p);wipe(r[1],950,y,i?34:28,i?300:600,i===3?ACC:INK,p,i?0:3,'right');if(i)hline(130,y-50,950,p,1,FAINT);});
  // filled on the drop
- const f=t-FILL;if(f>=0){const k=eo(f/.35);x.save();x.fillStyle=ACC;x.globalAlpha=k;x.fillRect(90,1000-70*k,900,70*k);x.restore();x.save();x.globalAlpha=k;txt('Filled · simulated',540,976,30,500,'#F4F6F5',4,'center');x.restore();
+ const f=t-FILL;if(f>=0){const k=eo(f/.35);x.save();x.fillStyle=ACC;x.globalAlpha=k;x.fillRect(90,1000-70*k,900,70*k);x.restore();x.save();x.globalAlpha=k;txt('Filled · simulated',540,976,30,600,'#001A10',4,'center');x.restore();
   for(let r=0;r<3;r++){const e=clamp(f*1.2-r*.15,0,1);if(e>0&&e<1){wire(2,ACC);x.globalAlpha=1-e;x.beginPath();x.rect(90-e*60,480-e*60,900+e*120,520+e*120);x.stroke();x.globalAlpha=1;flat();}}}
  wipe('Logged back into trades.csv.',90,1110,26,400,MUTE,(l-3.4)/.6);}
-function sEnd(l){globe(540,430,200,4,l/1.8);wipe('SENTINEL',540,800,96,200,INK,(l-1.0)/.7,22,'center');wipe('Data in. Order out.',540,880,36,300,INK,(l-1.5)/.7,0,'center');wipe('Follow for more trading automation, explained.',540,950,24,400,MUTE,(l-2.0)/.7,0,'center');}
+function sEnd(l){globe(540,430,200,4,l/1.8);{const p=(l-1.0)/.7;if(p>0){x.save();x.globalAlpha=clamp(p*2,0,1);x.shadowColor='rgba(31,219,138,.8)';x.shadowBlur=30;x.font=`700 88px ${MONO}`;x.fillStyle=INK;x.textAlign='center';if(x.letterSpacing!==undefined)x.letterSpacing='16px';x.fillText('SENTINEL',548,800+(1-eo(p))*12);x.restore();if(x.letterSpacing!==undefined)x.letterSpacing='0px';}}wipe('The market is code. Read it.',540,880,32,300,ACC,(l-1.5)/.7,0,'center');wipe('Follow for more trading automation, explained.',540,950,24,400,MUTE,(l-2.0)/.7,0,'center');}
 const F={title:sTitle,data:sData,edge:sEdge,rules:sRules,order:sOrder,end:sEnd};
 // ---------- frame ----------
+const GLY='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワ0123456789';
+function hh(a,b){let q=(Math.imul(a|0,374761393)+Math.imul((b|0)+7919,668265263))|0;q=Math.imul(q^(q>>>13),1274126177);q^=q>>>16;return (q>>>0)/4294967296;}
+function rain(t){x.font='bold 40px IPAGothic';x.textAlign='center';for(let k=0;k<18;k++){const px=(k+.5)*W/18,len=7+Math.floor(hh(2,k)*12),sp=110+hh(3,k)*170,span=H+len*44+200,head=mod(hh(4,k)*span+t*sp,span)-100;for(let j=0;j<len;j++){const py=head-j*44;if(py<-44||py>H+44)continue;const cell=Math.floor((py+t*0)/44);x.fillStyle=j===0?'rgba(223,255,239,.32)':`rgba(31,219,138,${(1-j/len)*.16})`;x.fillText(GLY[Math.floor(hh(5,k*131+Math.floor(head/44)-j)*GLY.length)],px,py);}}}
 const GR=document.createElement('canvas');GR.width=W;GR.height=H;{const g=GR.getContext('2d');let s=7;for(let i=0;i<14000;i++){s=(s*16807)%2147483647;const a=s/2147483647;s=(s*16807)%2147483647;const b=s/2147483647;s=(s*16807)%2147483647;g.fillStyle=`rgba(0,0,0,${.02+.03*(s/2147483647)})`;g.fillRect(a*W,b*H,1.2,1.2);}}
-function frame(t){x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;nodash();flat();const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#F1F1F2');g.addColorStop(1,'#DADADC');x.fillStyle=g;x.fillRect(0,0,W,H);x.drawImage(GR,0,0);
+function frame(t){x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;nodash();flat();const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#000D09');g.addColorStop(1,'#03261C');x.fillStyle=g;x.fillRect(0,0,W,H);rain(t);
  SEC.forEach(s=>{if(t<s.a-.01||t>s.b+.01)return;const l=t-s.a,out=s.k==='end'?0:sst(s.b-.32,s.b,t);x.save();x.globalAlpha=1-out;x.translate(0,-out*24);F[s.k](l,t);x.restore();});
- rail(t);disclaimer();if(t>D-.45){x.fillStyle=`rgba(232,232,233,${sst(D-.45,D-.02,t)})`;x.fillRect(0,0,W,H);}}
+ rail(t);disclaimer();if(t>D-.45){x.fillStyle=`rgba(0,13,9,${sst(D-.45,D-.02,t)})`;x.fillRect(0,0,W,H);}}
 window.TIMELINE={duration:D,fps:FPS,captions:SEC.map(s=>[s.a,s.b,[s.k]]),cues:[],markers:{bar:BAR,fill:FILL,sections:SEC.map(s=>s.a)}};
-window.__ready=document.fonts.load('300 60px Inter').then(()=>document.fonts.load('200 60px Inter')).then(()=>document.fonts.load('500 30px Inter')).then(()=>document.fonts.ready);
+window.__ready=document.fonts.load('bold 40px IPAGothic').then(()=>document.fonts.load('300 60px Inter')).then(()=>document.fonts.load('200 60px Inter')).then(()=>document.fonts.load('500 30px Inter')).then(()=>document.fonts.ready);
 window.seek=t=>{frame(t);return true;};
 window.__ready.then(()=>seek(+(q.get('t')||0)));
 </script></body></html>
