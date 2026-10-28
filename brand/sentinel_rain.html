@@ -20,5 +20,23 @@ function eyeRain(cx,cy,s){x.save();x.translate(cx,cy);x.scale(s,s);x.fillStyle='
  for(let j=0;j<5;j++)glyph(GL[(j*7)%GL.length],0,-46+j*26,24,`rgba(223,255,239,${1-j*.18})`,j===0);x.restore();}
 function v2(){bg();if(m==='avatar'){rain(13,56,60);eyeRain(500,500,1.05);}else{rain(34,34,70,.7);const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,'rgba(0,13,9,.3)');g.addColorStop(.35,'rgba(0,13,9,.85)');g.addColorStop(.6,'rgba(0,13,9,.3)');x.fillStyle=g;x.fillRect(0,0,W,H);eyeRain(1180,250,.62);T('SENTINEL',530,275,100,300,SANS,HEAD,26,'rgba(31,219,138,.7)');T('Always watching the market.',530,335,24,400,MONO,GRN,2);}vign(.5);}
 function v3(){bg();if(m==='avatar'){rain(16,48,80,.25);mosaic('S',`900 760px ${SANS}`,500,520,15,90);}else{rain(40,30,100,.22);mosaic('SENTINEL',`900 190px ${SANS}`,620,215,9,110);T('THE MARKET IS CODE. READ IT.',620,380,22,700,MONO,GRN,8);}vign(.55);}
-document.fonts.load('bold 40px IPAGothic').then(()=>document.fonts.load('900 100px Inter')).then(()=>document.fonts.ready).then(()=>{[0,v1,v2,v3][v]();window.done=true;});
+
+function plate(r){x.fillStyle='rgba(0,13,9,.78)';x.beginPath();x.arc(500,500,r,0,TAU);x.fill();}
+function banner(name,font,ls,tag,tagFont,seed){rain(30,36,seed);const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,'rgba(0,13,9,.3)');g.addColorStop(.37,'rgba(0,13,9,.9)');g.addColorStop(.72,'rgba(0,13,9,.3)');x.fillStyle=g;x.fillRect(0,0,W,H);
+ x.save();x.font=font;x.fillStyle=HEAD;x.textAlign='center';if(x.letterSpacing!==undefined)x.letterSpacing=ls+'px';x.shadowColor='rgba(31,219,138,.8)';x.shadowBlur=40;x.fillText(name,560+ls/2,280);x.restore();T(tag,560,340,22,400,tagFont,GRN,3);}
+// 4: mono S, double ring with a gap + order dot
+function v4(){bg();if(m==='avatar'){rain(11,64,140);plate(300);x.strokeStyle=GRN;x.lineWidth=4;x.beginPath();x.arc(500,500,300,-Math.PI*.32,Math.PI*1.62);x.stroke();x.strokeStyle='rgba(31,219,138,.45)';x.lineWidth=2;x.beginPath();x.arc(500,500,276,0,TAU);x.stroke();
+ x.save();x.shadowColor='rgba(120,255,190,1)';x.shadowBlur=24;x.fillStyle=HEAD;x.beginPath();x.arc(500+Math.cos(-Math.PI*.4)*300,500+Math.sin(-Math.PI*.4)*300,16,0,TAU);x.fill();x.restore();T('S',500,640,400,700,MONO,HEAD,0,'rgba(31,219,138,.85)');}
+ else banner('SENTINEL',`700 104px ${MONO}`,20,'The market is code. Read it.',MONO,150);vign(.55);}
+// 5: thin S (same family as the wordmark) in a radar ring with sweep
+function v5(){bg();if(m==='avatar'){rain(13,56,160);plate(310);const sw=x.createConicGradient(-Math.PI*.5,500,500);sw.addColorStop(0,'rgba(31,219,138,0)');sw.addColorStop(.85,'rgba(31,219,138,0)');sw.addColorStop(.999,'rgba(31,219,138,.35)');sw.addColorStop(1,'rgba(31,219,138,0)');x.fillStyle=sw;x.beginPath();x.arc(500,500,310,0,TAU);x.fill();
+ [310,232].forEach((r,i)=>{x.strokeStyle=i?'rgba(31,219,138,.35)':GRN;x.lineWidth=i?1.5:3;x.beginPath();x.arc(500,500,r,0,TAU);x.stroke();});for(let i=0;i<4;i++){const a=i*Math.PI/2;x.strokeStyle=GRN;x.lineWidth=3;x.beginPath();x.moveTo(500+Math.cos(a)*310,500+Math.sin(a)*310);x.lineTo(500+Math.cos(a)*340,500+Math.sin(a)*340);x.stroke();}
+ T('S',500,630,380,200,SANS,HEAD,0,'rgba(31,219,138,.9)');}
+ else banner('SENTINEL',`200 112px ${SANS}`,30,'Always watching the market.',MONO,170);vign(.55);}
+// 6: serif S in a hexagon frame, heavier rain
+function v6(){bg();if(m==='avatar'){rain(9,78,180);x.fillStyle='rgba(0,13,9,.8)';x.beginPath();for(let i=0;i<6;i++){const a=-Math.PI/2+i*TAU/6;x.lineTo(500+Math.cos(a)*320,500+Math.sin(a)*320);}x.closePath();x.fill();x.strokeStyle=GRN;x.lineWidth=4;x.stroke();
+ x.strokeStyle='rgba(31,219,138,.4)';x.lineWidth=2;x.beginPath();for(let i=0;i<6;i++){const a=-Math.PI/2+i*TAU/6;x.lineTo(500+Math.cos(a)*292,500+Math.sin(a)*292);}x.closePath();x.stroke();T('S',500,640,400,400,SERIF,HEAD,0,'rgba(31,219,138,.85)');}
+ else banner('SENTINEL',`400 108px ${SERIF}`,24,'The market is code. Read it.',MONO,190);vign(.55);}
+
+document.fonts.load('bold 40px IPAGothic').then(()=>document.fonts.load('900 100px Inter')).then(()=>document.fonts.ready).then(()=>{[0,v1,v2,v3,v4,v5,v6][v]();window.done=true;});
 </script></body></html>
