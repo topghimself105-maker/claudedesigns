@@ -12,7 +12,7 @@ document.fonts.load('bold 40px IPAGothic').then(()=>document.fonts.load('200 80p
  x.font='bold 40px IPAGothic';x.textAlign='center';for(let k=0;k<16;k++){const px=(k+.5)*W/16,len=6+Math.floor(h(2,k)*12),head=h(3,k)*(H+400);for(let j=0;j<len;j++){const py=head-j*44;x.fillStyle=`rgba(31,219,138,${(1-j/len)*.13})`;x.fillText(GL[Math.floor(h(4,k*31+j)*GL.length)],px,py);}}
  t('How a trading automation',90,190,66,300,INK,-1.5);t('places one exact order',90,268,66,300,INK,-1.5);
  t('Four steps, from your trade log to a filled order on NQ futures.',90,330,26,400,MUTE);
- const steps=[['Read the data','trades.csv holds every trade. journal.md says why it was taken.'],['Find the edge','Expectancy per setup, from wins, losses and R.'],['Check the rules','Session window, no news, risk 0.5% of the account.'],['Send the order','Limit entry, stop and a 5R target, sized to the risk.']];
+ const steps=[['Read the data','trades.csv holds every trade. journal.md says why it was taken.'],['Find the edge','75% win rate, 2.9R average win: +1.93R per trade.'],['Check the rules','Session window, no news, risk 0.5% of the account.'],['Send the order','Limit entry, stop and a 2.9R target, sized to the risk.']];
  const y0=420,rowH=190;wire(3);x.beginPath();x.moveTo(132,y0+20);x.lineTo(132,y0+20+rowH*3);x.stroke();noShadow();
  steps.forEach(([h,b],i)=>{const y=y0+i*rowH;wire(3);x.fillStyle='#02170F';x.beginPath();x.arc(132,y+20,30,0,TAU);x.fill();x.stroke();noShadow();if(i===3){x.fillStyle=ACC;x.beginPath();x.arc(132,y+20,30,0,TAU);x.fill();}
   t(String(i+1),132,y+31,30,500,i===3?'#001A10':INK,0,'center');t(h,200,y+34,42,500,INK,-.5);t(b,200,y+82,25,400,MUTE);});

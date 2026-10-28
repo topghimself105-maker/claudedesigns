@@ -21,8 +21,8 @@ The note explains the row. The row proves the note.
 For every setup it computes expectancy:
 win rate × average win (in R) − loss rate × 1R
 
-Example (simulated): 24% win rate, 5R target
-0.24 × 5 − 0.76 × 1 = +0.44R per trade
+Example (simulated): 75% win rate, 2.9R average win
+0.75 × 2.9 − 0.25 × 1 = +1.93R per trade
 
 Positive expectancy = an edge worth trading.
 
@@ -46,7 +46,7 @@ One fail = no trade.
 Size comes from the risk, not from a feeling:
 $500 risk ÷ (25 pts stop × $20 per NQ point) = 1 contract
 
-Then: limit entry, stop, 5R target. Sent automatically, logged in trades.csv.
+Then: limit entry, stop, 2.9R target. Sent automatically, logged in trades.csv.
 
 ---
 
