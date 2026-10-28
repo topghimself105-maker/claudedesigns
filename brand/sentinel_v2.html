@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#111}canvas{display:block}</style></head><body><canvas id="c"></canvas><script>
+// The Sentinel, new X profile directions. ?d=eye|machine|rain|radar  &m=avatar|banner
+const Q=new URLSearchParams(location.search),d=Q.get('d')||'eye',m=Q.get('m')||'avatar',[W,H]=m==='avatar'?[1000,1000]:[1500,500],c=document.getElementById('c');c.width=W;c.height=H;const x=c.getContext('2d'),TAU=Math.PI*2;
+function R(a,b){let v=(Math.imul(a|0,374761393)+Math.imul((b|0)+7919,668265263))|0;v=Math.imul(v^(v>>>13),1274126177);v^=v>>>16;return (v>>>0)/4294967296;}
+function T(s,px,py,sz,wt,fam,col,ls,al,glow){x.save();x.font=`${wt} ${sz}px ${fam}`;x.fillStyle=col;x.textAlign=al||'center';x.textBaseline='alphabetic';if(x.letterSpacing!==undefined)x.letterSpacing=(ls||0)+'px';if(glow){x.shadowColor=glow;x.shadowBlur=sz*.35;}x.fillText(s,px+((al||'center')==='center'?(ls||0)/2:0),py);x.restore();}
+const SANS='Inter,sans-serif',DISP='"Inter Display","Inter",sans-serif',MONO='"DejaVu Sans Mono",monospace',JP='IPAGothic,"DejaVu Sans Mono",monospace',SERIF='"Bitstream Charter",serif';
+function radial(cx,cy,r,a,b){const g=x.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,a);g.addColorStop(1,b);x.fillStyle=g;x.fillRect(0,0,W,H);}
+function grain(a){for(let i=0;i<W*H/90;i++){x.fillStyle=R(9,i)<.5?`rgba(255,255,255,${a})`:`rgba(0,0,0,${a})`;x.fillRect(R(1,i)*W,R(2,i)*H,1.3,1.3);}}
+// ---------- A: the watcher's eye (midnight + amber) ----------
+const AMB='#FFB547',CRM='#F6E7C8';
+function eye(cx,cy,s){x.save();x.translate(cx,cy);x.scale(s,s);
+ const sw=x.createConicGradient(-Math.PI/2,0,0);sw.addColorStop(0,'rgba(255,181,71,.0)');sw.addColorStop(.78,'rgba(255,181,71,0)');sw.addColorStop(.999,'rgba(255,181,71,.38)');sw.addColorStop(1,'rgba(255,181,71,0)');x.fillStyle=sw;x.beginPath();x.arc(0,0,380,0,TAU);x.fill();
+ [380,320].forEach((r,i)=>{x.strokeStyle=`rgba(255,181,71,${.35-i*.1})`;x.lineWidth=2;x.beginPath();x.arc(0,0,r,0,TAU);x.stroke();});
+ for(let i=0;i<72;i++){const a=i/72*TAU;x.strokeStyle='rgba(255,181,71,.5)';x.lineWidth=i%6?1.5:3;const r1=i%6?372:362;x.beginPath();x.moveTo(Math.cos(a)*r1,Math.sin(a)*r1);x.lineTo(Math.cos(a)*380,Math.sin(a)*380);x.stroke();}
+ for(let i=0;i<160;i++){const a=i/160*TAU+R(3,i)*.02,r0=110+R(4,i)*20,r1=200+R(5,i)*60;x.strokeStyle=`rgba(255,${150+R(6,i)*60|0},${60+R(7,i)*40|0},${.35+.55*R(8,i)})`;x.lineWidth=1.2+R(9,i)*2.2;x.beginPath();x.moveTo(Math.cos(a)*r0,Math.sin(a)*r0);x.lineTo(Math.cos(a)*r1,Math.sin(a)*r1);x.stroke();}
+ const g=x.createRadialGradient(0,0,40,0,0,260);g.addColorStop(0,'rgba(255,181,71,.0)');g.addColorStop(.45,'rgba(255,181,71,.18)');g.addColorStop(1,'rgba(255,181,71,0)');x.fillStyle=g;x.beginPath();x.arc(0,0,260,0,TAU);x.fill();
+ x.fillStyle='#061021';x.beginPath();x.arc(0,0,98,0,TAU);x.fill();x.strokeStyle=AMB;x.lineWidth=5;x.beginPath();x.arc(0,0,98,0,TAU);x.stroke();
+ x.fillStyle=CRM;x.beginPath();x.arc(-32,-34,14,0,TAU);x.fill();x.restore();}
+function A(){radial(W*(m==='avatar'?.5:.78),H*.5,Math.max(W,H)*.75,'#17335E','#060E1C');
+ if(m==='avatar'){eye(500,500,1.12);}else{
+  for(let i=0;i<46;i++){const px=40+i*30,h=10+R(20,i)*40,y0=430-Math.sin(i*.25)*20-i*1.2;x.fillStyle=`rgba(255,181,71,${.12+.12*R(21,i)})`;x.fillRect(px,y0-h,12,h);x.fillRect(px+5,y0-h-10,2,h+20);}
+  eye(1180,250,.58);T('SENTINEL',520,270,104,200,SANS,CRM,24,'center','rgba(255,181,71,.35)');T('Always watching the market.',520,330,26,300,SANS,'rgba(246,231,200,.75)',2);}
+ grain(.025);}
+// ---------- B: the machine (oxblood + red eyes) ----------
+function machine(cx,cy,s){x.save();x.translate(cx,cy);x.scale(s,s);
+ for(let k=0;k<16;k++){const a0=k/16*TAU+.2,len=10+Math.floor(R(30,k)*6);let px=Math.cos(a0)*95,py=Math.sin(a0)*95,ang=a0;for(let j=0;j<26;j++){ang+=Math.sin(j*.45+k)*.11;px+=Math.cos(ang)*14;py+=Math.sin(ang)*14;const r=Math.max(2.5,12-j*.36);const g=x.createRadialGradient(px-r*.3,py-r*.3,0,px,py,r);g.addColorStop(0,'#9C8A8C');g.addColorStop(1,'#2A1C1E');x.fillStyle=g;x.beginPath();x.arc(px,py,r,0,TAU);x.fill();}}
+ const g=x.createRadialGradient(0,0,10,0,0,150);g.addColorStop(0,'rgba(255,40,50,.55)');g.addColorStop(1,'rgba(255,40,50,0)');x.fillStyle=g;x.beginPath();x.arc(0,0,150,0,TAU);x.fill();
+ const hg=x.createRadialGradient(-20,-24,5,0,0,100);hg.addColorStop(0,'#5E4C4E');hg.addColorStop(1,'#140A0B');x.fillStyle=hg;x.beginPath();x.arc(0,0,100,0,TAU);x.fill();x.strokeStyle='#7A6466';x.lineWidth=3;x.stroke();
+ [[0,-30,18],[-34,4,14],[34,4,14],[-18,40,11],[18,40,11],[0,10,9]].forEach(([ex,ey,r])=>{x.save();x.shadowColor='#FF2A35';x.shadowBlur=26;x.fillStyle='#FF3B45';x.beginPath();x.arc(ex,ey,r,0,TAU);x.fill();x.restore();x.fillStyle='#FFD3D6';x.beginPath();x.arc(ex-r*.3,ey-r*.3,r*.28,0,TAU);x.fill();});x.restore();}
+function B(){radial(W*(m==='avatar'?.5:.78),H*.5,Math.max(W,H)*.7,'#3A1215','#0C0506');
+ if(m==='avatar')machine(500,500,1.15);else{machine(1170,250,.62);T('SENTINEL',560,282,140,800,DISP,'#F3E8E8',10,'center');T('It never sleeps. Neither does the market.',560,340,24,400,SANS,'rgba(255,90,100,.9)',1);}grain(.03);}
+// ---------- C: code rain (deep emerald) ----------
+const GL='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワ0123456789$%<>=+';
+function rain(cols,fs,seed){for(let k=0;k<cols;k++){const px=(k+.5)*W/cols+(R(seed,k)-.5)*8,len=8+Math.floor(R(seed+1,k)*16),head=R(seed+2,k)*(H+fs*len)-fs*2;for(let j=0;j<len;j++){const py=head-j*fs;if(py<-fs||py>H+fs)continue;const ch=GL[Math.floor(R(seed+3,k*97+j)*GL.length)],a=j===0?1:Math.pow(1-j/len,1.3)*.85;x.font=`bold ${fs}px ${JP}`;x.textAlign='center';x.fillStyle=j===0?`rgba(214,255,234,${a})`:`rgba(31,219,138,${a})`;if(j===0){x.shadowColor='rgba(120,255,190,.9)';x.shadowBlur=14;}x.fillText(ch,px,py);x.shadowBlur=0;}}}
+function C(){const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#01140F');g.addColorStop(1,'#042C21');x.fillStyle=g;x.fillRect(0,0,W,H);
+ if(m==='avatar'){rain(14,52,40);x.fillStyle='rgba(1,20,15,.55)';x.beginPath();x.arc(500,500,300,0,TAU);x.fill();x.strokeStyle='rgba(31,219,138,.7)';x.lineWidth=3;x.beginPath();x.arc(500,500,300,0,TAU);x.stroke();T('S',500,640,400,400,SERIF,'#D6FFEA',0,'center','rgba(31,219,138,.8)');}
+ else{rain(34,34,50);const v=x.createLinearGradient(0,0,W,0);v.addColorStop(0,'rgba(1,20,15,.2)');v.addColorStop(.37,'rgba(1,20,15,.85)');v.addColorStop(.7,'rgba(1,20,15,.2)');x.fillStyle=v;x.fillRect(0,0,W,H);T('SENTINEL',560,280,110,700,MONO,'#D6FFEA',22,'center','rgba(31,219,138,.8)');T('The market is code. Read it.',560,340,24,400,MONO,'rgba(31,219,138,.95)',2);}grain(.02);}
+// ---------- D: radar (cobalt) ----------
+function radar(cx,cy,r){x.save();x.translate(cx,cy);const sw=x.createConicGradient(-Math.PI*.35,0,0);sw.addColorStop(0,'rgba(127,227,255,0)');sw.addColorStop(.8,'rgba(127,227,255,0)');sw.addColorStop(.998,'rgba(127,227,255,.45)');sw.addColorStop(1,'rgba(127,227,255,0)');x.fillStyle=sw;x.beginPath();x.arc(0,0,r,0,TAU);x.fill();
+ [1,.75,.5,.25].forEach(k=>{x.strokeStyle='rgba(220,240,255,.45)';x.lineWidth=k===1?3:1.5;x.beginPath();x.arc(0,0,r*k,0,TAU);x.stroke();});x.strokeStyle='rgba(220,240,255,.3)';x.lineWidth=1.5;x.beginPath();x.moveTo(-r,0);x.lineTo(r,0);x.moveTo(0,-r);x.lineTo(0,r);x.stroke();
+ const a=-Math.PI*.35;x.strokeStyle='#E8F8FF';x.lineWidth=3;x.beginPath();x.moveTo(0,0);x.lineTo(Math.cos(a)*r,Math.sin(a)*r);x.stroke();
+ [[.62,-.9,9,1],[.38,-.4,6,.7],[.8,.6,5,.5],[.5,2.2,5,.45],[.27,3.6,4,.35]].forEach(([k,ang,s,al])=>{const px=Math.cos(ang)*r*k,py=Math.sin(ang)*r*k;x.save();x.shadowColor='#7FE3FF';x.shadowBlur=18;x.fillStyle=`rgba(232,248,255,${al})`;x.beginPath();x.arc(px,py,s*r/300,0,TAU);x.fill();x.restore();});
+ const bx=Math.cos(-.9)*r*.62,by=Math.sin(-.9)*r*.62;x.strokeStyle='#7FE3FF';x.lineWidth=2;x.beginPath();x.arc(bx,by,26*r/300,0,TAU);x.stroke();x.restore();}
+function Dd(){radial(W*(m==='avatar'?.5:.78),H*.5,Math.max(W,H)*.8,'#1546C8','#06144A');
+ if(m==='avatar')radar(500,500,370);else{radar(1180,250,200);T('SENTINEL',560,275,120,300,DISP,'#F2F8FF',30,'center');T('Watching the market. Placing the order.',560,335,24,400,SANS,'rgba(127,227,255,.95)',1);}grain(.02);}
+document.fonts.load('200 100px Inter').then(()=>document.fonts.load('800 100px "Inter Display"')).then(()=>document.fonts.load('bold 40px IPAGothic')).then(()=>document.fonts.ready).then(()=>{({eye:A,machine:B,rain:C,radar:Dd})[d]();window.done=true;});
+</script></body></html>
