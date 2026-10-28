@@ -4,15 +4,15 @@
 <style>html,body{margin:0;background:#000D09;height:100%}canvas{display:block;margin:0 auto;max-width:100vw;max-height:100vh}</style></head>
 <body><canvas id="c"></canvas>
 <script>
-// ORDER STEPS (The Sentinel): how a trading automation places one exact order, in four steps. 1080x1350 (4:5, X), 60 fps, 24.375 s = 13 bars at 128 bpm.
+// ORDER STEPS (The Sentinel): how a trading automation places one exact order, in four steps. 1080x1350 (4:5, X), 60 fps, 25 s = 12.5 bars at 120 bpm (Lazaros & Mindloco - Traca, drop on Filled).
 // Sentinel brand: deep green-black with falling code rain, light-green fine lines with a glow, mono S emblem, Matrix green accent. All numbers simulated. Every frame is a pure function of t.
-const q=new URLSearchParams(location.search),W=1080,H=1350,FPS=60,BPM=128,BAR=240/BPM,D=13*BAR,TAU=Math.PI*2;
+const q=new URLSearchParams(location.search),W=1080,H=1350,FPS=60,BPM=120,BAR=240/BPM,D=12.5*BAR,TAU=Math.PI*2;
 const cv=document.getElementById('c');cv.width=W;cv.height=H;const x=cv.getContext('2d');
 const INK='#DFFFEF',MUTE='#8FD9B6',FAINT='rgba(31,219,138,.22)',ACC='#1FDB8A',S='Inter,sans-serif',MONO='"DejaVu Sans Mono",monospace',DARK='#02170F';
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),lerp=(a,b,t)=>a+(b-a)*t,sst=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t)},eo=t=>1-Math.pow(1-clamp(t,0,1),3);
 const mod=(v,m)=>((v%m)+m)%m;
 // sections in bars
-const SEC=[['title',0,2],['data',2,4],['edge',4,6],['rules',6,8],['order',8,10.5],['end',10.5,13]].map(([k,a,b])=>({k,a:a*BAR,b:b*BAR}));
+const SEC=[['title',0,2],['data',2,4],['edge',4,6],['rules',6,8],['order',8,10.5],['end',10.5,12.5]].map(([k,a,b])=>({k,a:a*BAR,b:b*BAR}));
 const FILL=9*BAR;
 // ---------- helpers ----------
 function txt(s,px,py,sz,wt,col,ls,al){x.font=`${wt} ${sz}px ${S}`;x.fillStyle=col;x.textAlign=al||'left';x.textBaseline='alphabetic';if(x.letterSpacing!==undefined)x.letterSpacing=(ls||0)+'px';x.fillText(s,px,py);if(x.letterSpacing!==undefined)x.letterSpacing='0px';}

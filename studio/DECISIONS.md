@@ -73,3 +73,6 @@
 - Chosen: code-rain direction, variant A (bold mono S in an open ring with an order dot; SENTINEL in bold DejaVu Sans Mono with a green glow; "The market is code. Read it.").
 - Palette: #000D09 -> #03261C background, #1FDB8A green, #DFFFEF heads/text, #8FD9B6 body. Rain glyphs: IPAGothic katakana + digits, seeded.
 - Files: brand/final/sentinel_final_{avatar,banner,card,wide}.png, sentinel_post_steps.png; sources brand/sentinel_rain.html (v=4) and brand/sentinel_post_steps.html. Order Steps re-themed (emblem replaces the globe, animated rain).
+
+## Order Steps music
+- Owner-supplied Lazaros & Mindloco - Traca (Radio Edit), 120 bpm; window 121.625 s -> 146.625 s, drop at 139.625 s = film 18.0 s = "Filled". Film retimed to 120 bpm, 12.5 bars = 25 s. -14.0 LUFS gain-only. Licence not confirmed.
