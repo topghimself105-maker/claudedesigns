@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#111}canvas{display:block}</style></head><body><canvas id="c" width="1080" height="1350"></canvas><script>
+// ADT post card (1080x1350, X). Swiss minimal per ui-ux-pro-max (Minimalism & Swiss Style, Inter single family), brand wire globe, one accent.
+const c=document.getElementById('c'),x=c.getContext('2d'),W=1080,H=1350,TAU=Math.PI*2,INK='#141414',MUTE='#5B5B5F',ACC='#0F7B5F',S='Inter,sans-serif';
+function t(s,px,py,sz,wt,col,ls,al){x.font=`${wt} ${sz}px ${S}`;x.fillStyle=col;x.textAlign=al||'left';if(x.letterSpacing!==undefined)x.letterSpacing=(ls||0)+'px';x.fillText(s,px,py);if(x.letterSpacing!==undefined)x.letterSpacing='0px';}
+function wire(lw){x.strokeStyle=INK;x.lineWidth=lw;x.lineCap='round';x.lineJoin='round';x.shadowColor='rgba(0,0,0,.22)';x.shadowBlur=6;x.shadowOffsetY=6;}
+function noShadow(){x.shadowColor='transparent';x.shadowBlur=0;x.shadowOffsetY=0;}
+function globe(cx,cy,R,lw){wire(lw);x.beginPath();x.arc(cx,cy,R,0,TAU);x.stroke();for(const k of [.35,.7]){x.beginPath();x.ellipse(cx,cy,R*k,R,0,0,TAU);x.stroke();}for(const l of [-.5,0,.5]){x.beginPath();x.ellipse(cx,cy+l*R,R*Math.sqrt(1-l*l),R*.1,0,0,TAU);x.stroke();}
+ x.save();x.strokeStyle=ACC;x.lineWidth=lw*1.8;x.beginPath();[[-.82,.42],[-.56,.3],[-.38,.37],[-.15,.12],[.06,.17],[.38,-.12],[.58,-.06],[.78,-.28]].forEach((p,i)=>i?x.lineTo(cx+p[0]*R,cy+p[1]*R):x.moveTo(cx+p[0]*R,cy+p[1]*R));x.stroke();x.restore();noShadow();}
+document.fonts.load('200 80px Inter').then(()=>document.fonts.load('600 40px Inter')).then(()=>document.fonts.ready).then(()=>{
+ const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#F1F1F2');g.addColorStop(1,'#DCDCDE');x.fillStyle=g;x.fillRect(0,0,W,H);
+ t('How a trading automation',90,190,66,300,INK,-1.5);t('places one exact order',90,268,66,300,INK,-1.5);
+ t('Four steps, from your trade log to a filled order on NQ futures.',90,330,26,400,MUTE);
+ const steps=[['Read the data','trades.csv holds every trade. journal.md says why it was taken.'],['Find the edge','Expectancy per setup, from wins, losses and R.'],['Check the rules','Session window, no news, risk 0.5% of the account.'],['Send the order','Limit entry, stop and a 5R target, sized to the risk.']];
+ const y0=420,rowH=190;wire(3);x.beginPath();x.moveTo(132,y0+20);x.lineTo(132,y0+20+rowH*3);x.stroke();noShadow();
+ steps.forEach(([h,b],i)=>{const y=y0+i*rowH;wire(3);x.fillStyle='#EDEDEE';x.beginPath();x.arc(132,y+20,30,0,TAU);x.fill();x.stroke();noShadow();if(i===3){x.fillStyle=ACC;x.beginPath();x.arc(132,y+20,30,0,TAU);x.fill();}
+  t(String(i+1),132,y+31,30,500,i===3?'#F4F6F5':INK,0,'center');t(h,200,y+34,42,500,INK,-.5);t(b,200,y+82,25,400,MUTE);});
+ x.fillStyle='rgba(20,20,20,.18)';x.fillRect(90,1180,900,1.5);
+ globe(150,1255,46,2.6);t('ADT',225,1270,44,200,INK,14);t('Algo Data Trading',395,1250,22,400,MUTE);
+ t('Not financial advice. Educational. Simulated data.',395,1284,18,400,MUTE);
+ window.done=true;});
+</script></body></html>
