@@ -4,8 +4,8 @@
 <style>html,body{margin:0;background:#e6e6e7;height:100%}canvas{display:block;margin:0 auto;max-width:100vw;max-height:100vh}</style></head>
 <body><canvas id="c"></canvas>
 <script>
-// ORDER STEPS (ADT): how a trading automation places one exact order, in four steps. 1080x1350 (4:5, X), 60 fps, 24.375 s = 13 bars at 128 bpm.
-// ADT brand: light grey, black fine-line "wire" with a soft drop shadow, Inter thin, one green accent. All numbers simulated. Every frame is a pure function of t.
+// ORDER STEPS (The Sentinel): how a trading automation places one exact order, in four steps. 1080x1350 (4:5, X), 60 fps, 24.375 s = 13 bars at 128 bpm.
+// Sentinel brand: light grey, black fine-line "wire" with a soft drop shadow, Inter thin, one green accent. All numbers simulated. Every frame is a pure function of t.
 const q=new URLSearchParams(location.search),W=1080,H=1350,FPS=60,BPM=128,BAR=240/BPM,D=13*BAR,TAU=Math.PI*2;
 const cv=document.getElementById('c');cv.width=W;cv.height=H;const x=cv.getContext('2d');
 const INK='#141414',MUTE='#5B5B5F',FAINT='rgba(20,20,20,.16)',ACC='#0F7B5F',S='Inter,sans-serif';
@@ -31,7 +31,7 @@ function hline(x0,y,x1,p,lw,col){wire(lw||2,col);x.beginPath();x.moveTo(x0,y);x.
 // ---------- chrome: progress rail + disclaimer ----------
 function rail(t){const a=sst(SEC[1].a-.3,SEC[1].a+.2,t)*(1-sst(SEC[5].a-.2,SEC[5].a+.3,t));if(a<=0)return;x.save();x.globalAlpha=a;const xs=[90,250,410,570],y=120,cur=SEC.findIndex(s=>t>=s.a&&t<s.b)-1;
  hline(90,y,570,1,2,FAINT);xs.forEach((px,i)=>{const on=i===cur,done=i<cur;const pul=on?1+.08*Math.exp(-((t%(BAR/4))/(BAR/4))*6):1;wire(2.5);x.fillStyle=on?ACC:(done?INK:'#EDEDEE');x.beginPath();x.arc(px,y,16*pul,0,TAU);x.fill();x.stroke();flat();txt(String(i+1),px,y+6,16,500,on||done?'#F4F6F5':INK,0,'center');});
- txt('ADT',W-90,y+8,26,200,INK,8,'right');x.restore();}
+ txt('SENTINEL',W-90,y+8,24,200,INK,7,'right');x.restore();}
 function disclaimer(){x.save();txt('Not financial advice. For educational purposes only. Simulated data.',W/2,H-34,18,400,MUTE,0,'center');x.restore();}
 // ---------- scenes (local time l, progress u) ----------
 function sTitle(l){globe(540,470,230,4.5,l/2.2);wipe('How a trading automation',90,880,66,300,INK,(l-1.0)/.8,-1.5);wipe('places one exact order',90,958,66,300,INK,(l-1.35)/.8,-1.5);wipe('Four steps, from a trade log to a filled order on NQ futures.',90,1030,26,400,MUTE,(l-1.9)/.9);}
@@ -59,7 +59,7 @@ function sOrder(l,t){head(4,'Send the order','Size comes from the risk, not from
  const f=t-FILL;if(f>=0){const k=eo(f/.35);x.save();x.fillStyle=ACC;x.globalAlpha=k;x.fillRect(90,1000-70*k,900,70*k);x.restore();x.save();x.globalAlpha=k;txt('Filled · simulated',540,976,30,500,'#F4F6F5',4,'center');x.restore();
   for(let r=0;r<3;r++){const e=clamp(f*1.2-r*.15,0,1);if(e>0&&e<1){wire(2,ACC);x.globalAlpha=1-e;x.beginPath();x.rect(90-e*60,480-e*60,900+e*120,520+e*120);x.stroke();x.globalAlpha=1;flat();}}}
  wipe('Logged back into trades.csv.',90,1110,26,400,MUTE,(l-3.4)/.6);}
-function sEnd(l){globe(540,430,200,4,l/1.8);wipe('ADT',540,800,120,200,INK,(l-1.0)/.7,40,'center');wipe('Data in. Order out.',540,880,36,300,INK,(l-1.5)/.7,0,'center');wipe('Follow for more trading automation, explained.',540,950,24,400,MUTE,(l-2.0)/.7,0,'center');}
+function sEnd(l){globe(540,430,200,4,l/1.8);wipe('SENTINEL',540,800,96,200,INK,(l-1.0)/.7,22,'center');wipe('Data in. Order out.',540,880,36,300,INK,(l-1.5)/.7,0,'center');wipe('Follow for more trading automation, explained.',540,950,24,400,MUTE,(l-2.0)/.7,0,'center');}
 const F={title:sTitle,data:sData,edge:sEdge,rules:sRules,order:sOrder,end:sEnd};
 // ---------- frame ----------
 const GR=document.createElement('canvas');GR.width=W;GR.height=H;{const g=GR.getContext('2d');let s=7;for(let i=0;i<14000;i++){s=(s*16807)%2147483647;const a=s/2147483647;s=(s*16807)%2147483647;const b=s/2147483647;s=(s*16807)%2147483647;g.fillStyle=`rgba(0,0,0,${.02+.03*(s/2147483647)})`;g.fillRect(a*W,b*H,1.2,1.2);}}

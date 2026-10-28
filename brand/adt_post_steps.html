@@ -15,7 +15,7 @@ document.fonts.load('200 80px Inter').then(()=>document.fonts.load('600 40px Int
  steps.forEach(([h,b],i)=>{const y=y0+i*rowH;wire(3);x.fillStyle='#EDEDEE';x.beginPath();x.arc(132,y+20,30,0,TAU);x.fill();x.stroke();noShadow();if(i===3){x.fillStyle=ACC;x.beginPath();x.arc(132,y+20,30,0,TAU);x.fill();}
   t(String(i+1),132,y+31,30,500,i===3?'#F4F6F5':INK,0,'center');t(h,200,y+34,42,500,INK,-.5);t(b,200,y+82,25,400,MUTE);});
  x.fillStyle='rgba(20,20,20,.18)';x.fillRect(90,1180,900,1.5);
- globe(150,1255,46,2.6);t('ADT',225,1270,44,200,INK,14);t('Algo Data Trading',395,1250,22,400,MUTE);
- t('Not financial advice. Educational. Simulated data.',395,1284,18,400,MUTE);
+ globe(150,1255,46,2.6);t('SENTINEL',225,1266,34,200,INK,10);t('Trading automation, explained',490,1250,22,400,MUTE);
+ t('Not financial advice. Educational. Simulated data.',490,1284,18,400,MUTE);
  window.done=true;});
 </script></body></html>

@@ -63,3 +63,8 @@
 ## ADT brand (X)
 - Chosen mark: option 29, fine-line wire globe with a rising chart line, ADT in thin caps (light grey, black ink, soft shadow). Files in brand/final: adt_avatar.png (1000x1000), adt_banner.png (1500x500), adt_card.png (1080x1350 end-card, with disclaimer), adt_wide.png (1920x1080). Source: brand/adt_final.html.
 - Trademark risk: ADT is an established security brand; check registers (EUIPO/USPTO/Benelux) before relying on the name.
+
+## Rebrand: ADT -> The Sentinel
+- Account renamed to The Sentinel (wordmark SENTINEL): the watcher that never sleeps (Matrix sentinels; also "a guard on watch"). Same mark: wire globe + rising line, light grey, Inter thin.
+- New files in brand/final: sentinel_avatar/banner/banner2/banner3/card/wide/post_steps.png. ADT files kept for reference. Order Steps video re-rendered with the new name.
+- "Sentinel" is a common brand word (e.g. SentinelOne in cybersecurity): check handles and trademark registers before relying on it.
