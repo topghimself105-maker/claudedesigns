@@ -1,0 +1,65 @@
+How does a trading automation place one exact order?
+
+Not magic. Not a guess. Four steps, from a trade log to a filled order on NQ futures.
+
+A thread 🧵 (simulated data, educational)
+
+---
+
+1/ Read the data
+
+The bot reads two files:
+- trades.csv: one row per trade (setup, side, entry, stop, result in R)
+- journal.md: why each trade was taken, and if the plan was followed
+
+The note explains the row. The row proves the note.
+
+---
+
+2/ Find the edge
+
+For every setup it computes expectancy:
+win rate × average win (in R) − loss rate × 1R
+
+Example (simulated): 24% win rate, 5R target
+0.24 × 5 − 0.76 × 1 = +0.44R per trade
+
+Positive expectancy = an edge worth trading.
+
+---
+
+3/ Check the rules
+
+Before any order, every rule must pass:
+- the setup is in the journal
+- expectancy > 0
+- inside the session window
+- no high-impact news soon
+- risk per trade: 0.5% of the account
+
+One fail = no trade.
+
+---
+
+4/ Send the order
+
+Size comes from the risk, not from a feeling:
+$500 risk ÷ (25 pts stop × $20 per NQ point) = 1 contract
+
+Then: limit entry, stop, 5R target. Sent automatically, logged in trades.csv.
+
+---
+
+Why this matters:
+
+Most traders log trades. Few use them.
+
+An automation turns your own history into rules, and your rules into orders, without emotion.
+
+Data in. Order out.
+
+---
+
+Follow for more visual breakdowns of trading automation.
+
+Not financial advice. For educational purposes only. All numbers are simulated.
