@@ -34,7 +34,7 @@ Before any order, every rule must pass:
 - the setup is in the journal
 - expectancy > 0
 - inside the session window
-- no high-impact news soon
+- a high-impact news release is due
 - risk per trade: 0.5% of the account
 
 One fail = no trade.
