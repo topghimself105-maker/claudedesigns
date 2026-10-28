@@ -23,6 +23,7 @@ Studio for X/Twitter and YouTube content about automation and trading automation
 
 ## Skills (installed in `.claude/skills/`)
 - `explainer-film` (this studio's general baseline), plus `frontend-design`, `canvas-design`, `algorithmic-art` from github.com/anthropics/skills.
+- From github.com/nextlevelbuilder/ui-ux-pro-max-skill (MIT): `ui-ux-pro-max` (searchable styles, palettes, font pairings, UX rules), `ui-styling`, `design`, `design-system`, `brand`, `banner-design`, `slides`. Their logo/icon/background scripts call external image APIs (Gemini etc.) and need API keys this environment does not have; the local search scripts work offline.
 - Remotion is NOT used in this project (no package.json, renders are canvas + ffmpeg), so the Remotion skills are not installed. If the project ever adopts Remotion, run `npx skills add remotion-dev/skills` and use `remotion-best-practices` from then on.
 - For every video or design change, apply `frontend-design` (distinctive, intentional aesthetic direction, typography, no templated defaults) and `algorithmic-art` (seeded, parameter-driven generative motion; every frame a pure function of t) before writing code. Use `canvas-design` for static posters and image cards. If `remotion-best-practices` is installed, follow it for any Remotion work as well.
 
