@@ -84,3 +84,4 @@
 - Music: Drake - Confusion (remix), 120.76 bpm; window 123.956 s, drop 142.836 s = ORDER FILLED at film 18.88 s; -20 LUFS.
 - v2 (owner: "no real-life chart"): viewport replaced by pseudo-3D macro scenes (studio/films/sentinel-scan/scenes.js): cutaway core, pulse core, current, liquidity pool, membrane, imbalance, time ring, twin cores, OTE lens, shield, beacon, execution core. Depth of field via blurred far/near layers. HUD, fields, timing and music unchanged.
 - v3 (owner): slower tour, 5 beats per shot, 69 beats = 34.3 s, fill at beat 59; audio window from 113.52 s; music turned down to -27 LUFS; softer cut glitch.
+- v4 (owner): frame sits still (no beat bounce, no cut glitch); only the drop punches. After ORDER FILLED a slow zoom-out recap (2 beats per field, reverse order, soft crossfades) back to the cutaway, then a 4.5 s end card. 96 beats = 47.7 s, -27 LUFS.
