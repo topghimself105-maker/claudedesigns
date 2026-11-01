@@ -1,30 +1,32 @@
-Most traders see a chart.
-The Sentinel sees 10 fields.
+If a trading algo was a living cell 🧬
 
-News → Orderflow → DOL → Liq sweep → POI → TOI → SMT → Entry → Invalidation → Target
+Nucleus: the news
+Current: the orderflow
+Membrane: the liquidity it sweeps
+Lens: the entry
+Shield: the invalidation
+Beacon: the target
 
-10/10 aligned = one exact order.
+10 parts. 1 organism. 1 exact order.
 
 Simulated data. Not financial advice.
 
 =====
 
-One NQ setup, read field by field:
+What if a trading algorithm was a human cell?
 
-PDL swept at 09:52
-BISI 21,476 – 21,486
-SMT: NQ lower low, ES higher low
-OTE entry 21,480
-Stop below the swing low, target PDH (2.9R)
+Every organelle has one job.
+News, orderflow, liquidity, timing, entry, risk.
 
-No emotion. Just the checklist.
+When all 10 align, it acts.
 
-Simulated data. NFA.
+Simulated data. Not financial advice.
 
 =====
 
-The market is code. Read it.
+If a trading algo was a human cell.
 
-10 fields. 1 checklist. 1 order.
+Zoom in ×33,000 and you'll find no emotion.
+Just 10 parts doing their job.
 
-Simulated example, not financial advice.
+Simulated data. NFA.

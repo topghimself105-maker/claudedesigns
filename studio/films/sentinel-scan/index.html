@@ -7,8 +7,8 @@
 <script>
 // SENTINEL SCAN v2: a zoom tour into 'the Sentinel core' (cinematic macro close-ups, no real chart), one object per journal field, ending on ORDER FILLED (the track's drop).
 // Layout after the supplied reference (top HUD, live viewport with close-ups + label card + zoom counter, bottom instrument panel).
-// 1080x1350 (4:5, X), 60 fps, 48 beats at 120.76 bpm. All prices, trades and stats are SIMULATED. Every frame is a pure function of t.
-const q=new URLSearchParams(location.search),W=1080,H=1350,FPS=60,BEAT=0.4968409906,D=48*BEAT,TAU=Math.PI*2;
+// 1080x1350 (4:5, X), 60 fps, 69 beats at 120.76 bpm (5 beats per shot, slower tour). All prices, trades and stats are SIMULATED. Every frame is a pure function of t.
+const q=new URLSearchParams(location.search),W=1080,H=1350,FPS=60,BEAT=0.4968409906,D=69*BEAT,TAU=Math.PI*2;
 const cv=document.getElementById('c');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
 const buf=document.createElement('canvas');buf.width=W;buf.height=H;const x=buf.getContext('2d');
 const small=document.createElement('canvas');small.width=W/4;small.height=H/4;const sx4=small.getContext('2d');
@@ -33,20 +33,20 @@ const tm=i=>{const m=420+i;return `${String(Math.floor(m/60)).padStart(2,'0')}:$
 // ---------- shots (beats) ----------
 const SH=[
  {k:'overview',b:0, cam:[100,21500,236,128],tag:'CUTAWAY · REAR VIEW',      title:'THE SENTINEL',  val:'Core cutaway',      pts:['One NQ setup, read from the journal','10 fields, one exact order']},
- {k:'news',    b:4, cam:[92,21508,62,62],   tag:'CLOSE-UP · PULSE CORE',   title:'NEWS',          val:'High Impact',           pts:['08:30 release on the calendar','Volatility is the opportunity']},
- {k:'flow',    b:7, cam:[120,21500,170,110],tag:'CLOSE-UP · CURRENT',title:'ORDERFLOW',   val:'Bullish',               pts:['Higher timeframe pushing up','Buyers in control']},
- {k:'dol',     b:10,cam:[165,21527,120,96], tag:'CLOSE-UP · LIQUIDITY POOL',    title:'DRAW ON LIQUIDITY',val:'Previous Daily High', pts:['Buy-side liquidity above','Price is drawn to '+fmt(PDH)]},
- {k:'sweep',   b:13,cam:[172,21461,22,20],  tag:'CLOSE-UP · MEMBRANE',title:'LIQUIDITY SWEEP',val:'Previous Daily Low',  pts:['PDL '+fmt(PDL)+' taken at 09:52','Low printed at '+fmt(SWL)]},
- {k:'poi',     b:16,cam:[176,21483,12,30],  tag:'CLOSE-UP · IMBALANCE',    title:'POINT OF INTEREST',val:'BISI',               pts:['Buy-side imbalance, sell-side inefficiency','Gap '+fmt(BISI[0])+' – '+fmt(BISI[1])]},
- {k:'toi',     b:19,cam:[178,21490,64,84],  tag:'CLOSE-UP · TIME RING',    title:'TIME OF INTEREST',val:'09:45 – 10:15',        pts:['Sweep and entry inside the window']},
- {k:'smt',     b:22,cam:[160,21485,52,64],  tag:'CLOSE-UP · TWIN CORES',    title:'SMT',           val:'90-Minute',             pts:['NQ makes a lower low','ES holds a higher low']},
- {k:'ote',     b:25,cam:[184,21488,30,72],  tag:'CLOSE-UP · OTE LENS',  title:'ENTRY MODEL',   val:'OTE',                   pts:['62 – 79% of the displacement leg','Limit '+fmt(ENTRY)+', inside the BISI']},
- {k:'inval',   b:28,cam:[173,21458,18,14],  tag:'CLOSE-UP · SHIELD',title:'INVALIDATION',val:'Swing Low',          pts:['Below the sweep low '+fmt(SWL),'Stop '+fmt(STOP)+' · 25 pts']},
- {k:'target',  b:31,cam:[186,21505,62,116], tag:'CLOSE-UP · BEACON', title:'TARGET',        val:'Previous Daily High',   pts:[fmt(TGT)+' · 2.9R','Back to the draw on liquidity']},
- {k:'order',   b:34,cam:[190,21492,48,96],  tag:'CORE · EXECUTION',         title:'ORDER',         val:'LONG NQ · LIMIT',       pts:['Risk 0.5% of the account','Size 1 contract']},
- {k:'end',     b:42}];
-SH.forEach((s,i)=>{s.t0=s.b*BEAT;s.t1=(i<SH.length-1?SH[i+1].b:48)*BEAT;});
-const FILL=38*BEAT,FIELDS=SH.slice(1,11);
+ {k:'news',    b:5, cam:[92,21508,62,62],   tag:'CLOSE-UP · PULSE CORE',   title:'NEWS',          val:'High Impact',           pts:['08:30 release on the calendar','Volatility is the opportunity']},
+ {k:'flow',    b:10, cam:[120,21500,170,110],tag:'CLOSE-UP · CURRENT',title:'ORDERFLOW',   val:'Bullish',               pts:['Higher timeframe pushing up','Buyers in control']},
+ {k:'dol',     b:15,cam:[165,21527,120,96], tag:'CLOSE-UP · LIQUIDITY POOL',    title:'DRAW ON LIQUIDITY',val:'Previous Daily High', pts:['Buy-side liquidity above','Price is drawn to '+fmt(PDH)]},
+ {k:'sweep',   b:20,cam:[172,21461,22,20],  tag:'CLOSE-UP · MEMBRANE',title:'LIQUIDITY SWEEP',val:'Previous Daily Low',  pts:['PDL '+fmt(PDL)+' taken at 09:52','Low printed at '+fmt(SWL)]},
+ {k:'poi',     b:25,cam:[176,21483,12,30],  tag:'CLOSE-UP · IMBALANCE',    title:'POINT OF INTEREST',val:'BISI',               pts:['Buy-side imbalance, sell-side inefficiency','Gap '+fmt(BISI[0])+' – '+fmt(BISI[1])]},
+ {k:'toi',     b:30,cam:[178,21490,64,84],  tag:'CLOSE-UP · TIME RING',    title:'TIME OF INTEREST',val:'09:45 – 10:15',        pts:['Sweep and entry inside the window']},
+ {k:'smt',     b:35,cam:[160,21485,52,64],  tag:'CLOSE-UP · TWIN CORES',    title:'SMT',           val:'90-Minute',             pts:['NQ makes a lower low','ES holds a higher low']},
+ {k:'ote',     b:40,cam:[184,21488,30,72],  tag:'CLOSE-UP · OTE LENS',  title:'ENTRY MODEL',   val:'OTE',                   pts:['62 – 79% of the displacement leg','Limit '+fmt(ENTRY)+', inside the BISI']},
+ {k:'inval',   b:45,cam:[173,21458,18,14],  tag:'CLOSE-UP · SHIELD',title:'INVALIDATION',val:'Swing Low',          pts:['Below the sweep low '+fmt(SWL),'Stop '+fmt(STOP)+' · 25 pts']},
+ {k:'target',  b:50,cam:[186,21505,62,116], tag:'CLOSE-UP · BEACON', title:'TARGET',        val:'Previous Daily High',   pts:[fmt(TGT)+' · 2.9R','Back to the draw on liquidity']},
+ {k:'order',   b:55,cam:[190,21492,48,96],  tag:'CORE · EXECUTION',         title:'ORDER',         val:'LONG NQ · LIMIT',       pts:['Risk 0.5% of the account','Size 1 contract']},
+ {k:'end',     b:63}];
+SH.forEach((s,i)=>{s.t0=s.b*BEAT;s.t1=(i<SH.length-1?SH[i+1].b:69)*BEAT;});
+const FILL=59*BEAT,FIELDS=SH.slice(1,11);
 const shotAt=t=>{let i=0;SH.forEach((s,k)=>{if(t>=s.t0)i=k;});return i;};
 const bump=t=>Math.exp(-mod(t,BEAT)/BEAT*6);
 
@@ -150,7 +150,7 @@ function frame(t){x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;const g=x.createLi
  x.fillStyle='rgba(0,8,5,.96)';x.fillRect(0,1292,W,58);T('Not financial advice. For educational purposes only. Simulated data.',W/2,1328,18,400,SANS,'#B9D9C9','center');
  // post: bloom, cut glitch, drop flash, scanlines
  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.filter='none';
- const si=shotAt(t),cut=t-SH[si].t0,gl=cut<.14&&si>0?1-cut/.14:0,punch=1+.012*bump(t)+(t>=FILL?.05*Math.exp(-(t-FILL)*6):0);
+ const si=shotAt(t),cut=t-SH[si].t0,gl=cut<.12&&si>0?(1-cut/.12)*.6:0,punch=1+.012*bump(t)+(t>=FILL?.05*Math.exp(-(t-FILL)*6):0);
  ctx.save();ctx.translate(W/2,H/2);ctx.scale(punch,punch);ctx.translate(-W/2,-H/2);ctx.drawImage(buf,0,0);
  if(gl>0){ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.25*gl;ctx.drawImage(buf,8*gl,0);ctx.drawImage(buf,-8*gl,0);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;for(let k=0;k<6;k++){const sy=hh(Math.floor(t*60),k)*H,sh=6+hh(Math.floor(t*60),k+9)*40,dx=(hh(Math.floor(t*60),k+19)-.5)*60*gl;ctx.drawImage(buf,0,sy,W,sh,dx,sy,W,sh);}}
  ctx.restore();
