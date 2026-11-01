@@ -8,7 +8,7 @@
 // SENTINEL SCAN v2: a zoom tour into 'the Sentinel core' (cinematic macro close-ups, no real chart), one object per journal field, ending on ORDER FILLED (the track's drop).
 // Layout after the supplied reference (top HUD, live viewport with close-ups + label card + zoom counter, bottom instrument panel).
 // 1080x1350 (4:5, X), 60 fps, 96 beats at 120.76 bpm: tour in (5 beats per field), ORDER FILLED on the drop, slow zoom-out recap field by field, short end card.
-// The frame sits still: no beat bounce; only the drop moves the picture. All prices, trades and stats are SIMULATED. Every frame is a pure function of t.
+// The frame sits still: no beat bounce; only the drop moves the picture. Magnification counts up steadily (x800 +200 per shot) and back down in the recap. All prices, trades and stats are SIMULATED. Every frame is a pure function of t.
 const q=new URLSearchParams(location.search),W=1080,H=1350,FPS=60,BEAT=0.4968409906,D=96*BEAT,TAU=Math.PI*2;
 const cv=document.getElementById('c');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
 const buf=document.createElement('canvas');buf.width=W;buf.height=H;const x=buf.getContext('2d');
@@ -117,7 +117,7 @@ function viewport(t){const si=shotAt(t),s=SH[si],lt=t-s.t0;x.save();rr(VX,VY,VW,
  x.strokeStyle='rgba(31,219,138,.35)';x.lineWidth=1.5;rr(VX,VY,VW,VH,18);x.stroke();
  [[VX+14,VY+14,1,1],[VX+VW-14,VY+14,-1,1],[VX+14,VY+VH-14,1,-1],[VX+VW-14,VY+VH-14,-1,-1]].forEach(([px,py,a,b])=>{x.strokeStyle=GL;x.lineWidth=3;x.beginPath();x.moveTo(px,py+b*28);x.lineTo(px,py);x.lineTo(px+a*28,py);x.stroke();});
  const live=Math.floor(t*2)%2===0;x.fillStyle=live?RED:'rgba(255,90,106,.4)';x.beginPath();x.arc(VX+44,VY+38,6,0,TAU);x.fill();T(s.recap?`RECAP · ${String(s.recap).padStart(2,'0')}/11`:`LIVE · SHOT ${String(Math.min(si+1,12)).padStart(2,'0')}/12`,VX+58,VY+44,16,700,MONO,HEAD,'left',2);
- pill(VX+VW/2-x.measureText(s.tag).width/2-80,VY+20,s.tag,G);const MAG=[700,4200,2600,3800,15000,22000,8000,12000,18000,26000,9000,30000],zoom=Math.round(MAG[s.recap?(s.recap===11?0:11-s.recap):Math.min(si,11)]*(s.recap?lerp(1.16,.94,clamp(lt/(s.t1-s.t0),0,1)):1+.12*eo(clamp(lt/(s.t1-s.t0),0,1))));T('×'+zoom.toLocaleString('en-US').replace(',',' '),VX+VW-30,VY+48,30,800,DISP,HEAD,'right',0,'rgba(31,219,138,.6)');T('MAGNIFICATION',VX+VW-30,VY+70,13,700,MONO,MUTE,'right',2);}
+ pill(VX+VW/2-x.measureText(s.tag).width/2-80,VY+20,s.tag,G);const MAG=k=>800+200*k,uu=clamp(lt/(s.t1-s.t0),0,1),fi=s.recap?(s.recap===11?0:11-s.recap):Math.min(si,11),zoom=Math.round((s.recap?lerp(MAG(fi)+200,MAG(fi),uu):(si>=11?MAG(11):lerp(MAG(fi),MAG(fi+1),uu)))/10)*10;T('×'+zoom.toLocaleString('en-US').replace(',',' '),VX+VW-30,VY+48,30,800,DISP,HEAD,'right',0,'rgba(31,219,138,.6)');T('MAGNIFICATION',VX+VW-30,VY+70,13,700,MONO,MUTE,'right',2);}
 function overlays2(cam,t,si){// entry marker after the fill
  if(t>=FILL){const [px,py]=W2S(cam,192,ENTRY);const e=clamp((t-FILL)*1.3,0,1);for(let r=0;r<3;r++){const k=clamp(e*1.4-r*.15,0,1);if(k>0&&k<1){x.strokeStyle=`rgba(124,255,196,${1-k})`;x.lineWidth=3;x.beginPath();x.arc(px,py,8+k*220,0,TAU);x.stroke();}}x.save();x.fillStyle=HEAD;x.shadowColor=G;x.shadowBlur=24;x.beginPath();x.arc(px,py,9,0,TAU);x.fill();x.restore();}}
 
