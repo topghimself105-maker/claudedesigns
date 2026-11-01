@@ -76,3 +76,9 @@
 
 ## Order Steps music
 - Owner-supplied Lazaros & Mindloco - Traca (Radio Edit), 120 bpm; window 121.625 s -> 146.625 s, drop at 139.625 s = film 18.0 s = "Filled". Film retimed to 120 bpm, 12.5 bars = 25 s. -14.0 LUFS gain-only, then turned down to -20 LUFS at the owner's request. Licence not confirmed.
+
+## Sentinel Scan (film 8, X)
+- Structure after the owner's reference (refs/walrus_ref.mp4): top HUD, live viewport with close-ups, label card, zoom counter, bottom locator/fields/edge/data stream.
+- Example setup chosen with the owner: News High Impact, Orderflow Bullish, DOL PDH, sweep PDL, POI BISI, TOI 09:45-10:15, SMT 90-Minute, entry OTE, invalidation Swing Low, target PDH. Prices simulated (PDH 21,552.50 = 2.9R target, PDL 21,462, sweep low 21,457, BISI 21,476-21,486, entry 21,480, stop 21,455).
+- The owner's system name is not shown in the video (owner request).
+- Music: Drake - Confusion (remix), 120.76 bpm; window 123.956 s, drop 142.836 s = ORDER FILLED at film 18.88 s; -20 LUFS.

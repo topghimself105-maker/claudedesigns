@@ -1,0 +1,30 @@
+Most traders see a chart.
+The Sentinel sees 10 fields.
+
+News → Orderflow → DOL → Liq sweep → POI → TOI → SMT → Entry → Invalidation → Target
+
+10/10 aligned = one exact order.
+
+Simulated data. Not financial advice.
+
+=====
+
+One NQ setup, read field by field:
+
+PDL swept at 09:52
+BISI 21,476 – 21,486
+SMT: NQ lower low, ES higher low
+OTE entry 21,480
+Stop below the swing low, target PDH (2.9R)
+
+No emotion. Just the checklist.
+
+Simulated data. NFA.
+
+=====
+
+The market is code. Read it.
+
+10 fields. 1 checklist. 1 order.
+
+Simulated example, not financial advice.
