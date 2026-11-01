@@ -82,3 +82,4 @@
 - Example setup chosen with the owner: News High Impact, Orderflow Bullish, DOL PDH, sweep PDL, POI BISI, TOI 09:45-10:15, SMT 90-Minute, entry OTE, invalidation Swing Low, target PDH. Prices simulated (PDH 21,552.50 = 2.9R target, PDL 21,462, sweep low 21,457, BISI 21,476-21,486, entry 21,480, stop 21,455).
 - The owner's system name is not shown in the video (owner request).
 - Music: Drake - Confusion (remix), 120.76 bpm; window 123.956 s, drop 142.836 s = ORDER FILLED at film 18.88 s; -20 LUFS.
+- v2 (owner: "no real-life chart"): viewport replaced by pseudo-3D macro scenes (studio/films/sentinel-scan/scenes.js): cutaway core, pulse core, current, liquidity pool, membrane, imbalance, time ring, twin cores, OTE lens, shield, beacon, execution core. Depth of field via blurred far/near layers. HUD, fields, timing and music unchanged.

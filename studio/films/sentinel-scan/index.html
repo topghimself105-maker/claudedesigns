@@ -3,8 +3,9 @@
 <title>Sentinel Scan</title>
 <style>html,body{margin:0;background:#000A07;height:100%}canvas{display:block;margin:0 auto;max-width:100vw;max-height:100vh}</style></head>
 <body><canvas id="c"></canvas>
+<script src="scenes.js"></script>
 <script>
-// SENTINEL SCAN: a zoom tour through one NQ setup, one close-up per journal field, ending on ORDER FILLED (the track's drop).
+// SENTINEL SCAN v2: a zoom tour into 'the Sentinel core' (cinematic macro close-ups, no real chart), one object per journal field, ending on ORDER FILLED (the track's drop).
 // Layout after the supplied reference (top HUD, live viewport with close-ups + label card + zoom counter, bottom instrument panel).
 // 1080x1350 (4:5, X), 60 fps, 48 beats at 120.76 bpm. All prices, trades and stats are SIMULATED. Every frame is a pure function of t.
 const q=new URLSearchParams(location.search),W=1080,H=1350,FPS=60,BEAT=0.4968409906,D=48*BEAT,TAU=Math.PI*2;
@@ -31,18 +32,18 @@ const tm=i=>{const m=420+i;return `${String(Math.floor(m/60)).padStart(2,'0')}:$
 
 // ---------- shots (beats) ----------
 const SH=[
- {k:'overview',b:0, cam:[100,21500,236,128],tag:'WIDE · NQ 1M',      title:'THE SETUP',     val:'NQ · New York AM',      pts:['One trade, read from the journal','10 fields, one exact order']},
- {k:'news',    b:4, cam:[92,21508,62,62],   tag:'CLOSE-UP · NEWS',   title:'NEWS',          val:'High Impact',           pts:['08:30 release on the calendar','Volatility is the opportunity']},
- {k:'flow',    b:7, cam:[120,21500,170,110],tag:'CLOSE-UP · ORDERFLOW',title:'ORDERFLOW',   val:'Bullish',               pts:['Higher timeframe pushing up','Buyers in control']},
- {k:'dol',     b:10,cam:[165,21527,120,96], tag:'CLOSE-UP · DOL',    title:'DRAW ON LIQUIDITY',val:'Previous Daily High', pts:['Buy-side liquidity above','Price is drawn to '+fmt(PDH)]},
- {k:'sweep',   b:13,cam:[172,21461,22,20],  tag:'CLOSE-UP · LIQ SWEEP',title:'LIQUIDITY SWEEP',val:'Previous Daily Low',  pts:['PDL '+fmt(PDL)+' taken at 09:52','Low printed at '+fmt(SWL)]},
- {k:'poi',     b:16,cam:[176,21483,12,30],  tag:'CLOSE-UP · POI',    title:'POINT OF INTEREST',val:'BISI',               pts:['Buy-side imbalance, sell-side inefficiency','Gap '+fmt(BISI[0])+' – '+fmt(BISI[1])]},
- {k:'toi',     b:19,cam:[178,21490,64,84],  tag:'CLOSE-UP · TOI',    title:'TIME OF INTEREST',val:'09:45 – 10:15',        pts:['Sweep and entry inside the window']},
- {k:'smt',     b:22,cam:[160,21485,52,64],  tag:'CLOSE-UP · SMT',    title:'SMT',           val:'90-Minute',             pts:['NQ makes a lower low','ES holds a higher low']},
- {k:'ote',     b:25,cam:[184,21488,30,72],  tag:'CLOSE-UP · ENTRY',  title:'ENTRY MODEL',   val:'OTE',                   pts:['62 – 79% of the displacement leg','Limit '+fmt(ENTRY)+', inside the BISI']},
- {k:'inval',   b:28,cam:[173,21458,18,14],  tag:'CLOSE-UP · INVALIDATION',title:'INVALIDATION',val:'Swing Low',          pts:['Below the sweep low '+fmt(SWL),'Stop '+fmt(STOP)+' · 25 pts']},
- {k:'target',  b:31,cam:[186,21505,62,116], tag:'CLOSE-UP · TARGET', title:'TARGET',        val:'Previous Daily High',   pts:[fmt(TGT)+' · 2.9R','Back to the draw on liquidity']},
- {k:'order',   b:34,cam:[190,21492,48,96],  tag:'EXECUTION',         title:'ORDER',         val:'LONG NQ · LIMIT',       pts:['Risk 0.5% of the account','Size 1 contract']},
+ {k:'overview',b:0, cam:[100,21500,236,128],tag:'CUTAWAY · REAR VIEW',      title:'THE SENTINEL',  val:'Core cutaway',      pts:['One NQ setup, read from the journal','10 fields, one exact order']},
+ {k:'news',    b:4, cam:[92,21508,62,62],   tag:'CLOSE-UP · PULSE CORE',   title:'NEWS',          val:'High Impact',           pts:['08:30 release on the calendar','Volatility is the opportunity']},
+ {k:'flow',    b:7, cam:[120,21500,170,110],tag:'CLOSE-UP · CURRENT',title:'ORDERFLOW',   val:'Bullish',               pts:['Higher timeframe pushing up','Buyers in control']},
+ {k:'dol',     b:10,cam:[165,21527,120,96], tag:'CLOSE-UP · LIQUIDITY POOL',    title:'DRAW ON LIQUIDITY',val:'Previous Daily High', pts:['Buy-side liquidity above','Price is drawn to '+fmt(PDH)]},
+ {k:'sweep',   b:13,cam:[172,21461,22,20],  tag:'CLOSE-UP · MEMBRANE',title:'LIQUIDITY SWEEP',val:'Previous Daily Low',  pts:['PDL '+fmt(PDL)+' taken at 09:52','Low printed at '+fmt(SWL)]},
+ {k:'poi',     b:16,cam:[176,21483,12,30],  tag:'CLOSE-UP · IMBALANCE',    title:'POINT OF INTEREST',val:'BISI',               pts:['Buy-side imbalance, sell-side inefficiency','Gap '+fmt(BISI[0])+' – '+fmt(BISI[1])]},
+ {k:'toi',     b:19,cam:[178,21490,64,84],  tag:'CLOSE-UP · TIME RING',    title:'TIME OF INTEREST',val:'09:45 – 10:15',        pts:['Sweep and entry inside the window']},
+ {k:'smt',     b:22,cam:[160,21485,52,64],  tag:'CLOSE-UP · TWIN CORES',    title:'SMT',           val:'90-Minute',             pts:['NQ makes a lower low','ES holds a higher low']},
+ {k:'ote',     b:25,cam:[184,21488,30,72],  tag:'CLOSE-UP · OTE LENS',  title:'ENTRY MODEL',   val:'OTE',                   pts:['62 – 79% of the displacement leg','Limit '+fmt(ENTRY)+', inside the BISI']},
+ {k:'inval',   b:28,cam:[173,21458,18,14],  tag:'CLOSE-UP · SHIELD',title:'INVALIDATION',val:'Swing Low',          pts:['Below the sweep low '+fmt(SWL),'Stop '+fmt(STOP)+' · 25 pts']},
+ {k:'target',  b:31,cam:[186,21505,62,116], tag:'CLOSE-UP · BEACON', title:'TARGET',        val:'Previous Daily High',   pts:[fmt(TGT)+' · 2.9R','Back to the draw on liquidity']},
+ {k:'order',   b:34,cam:[190,21492,48,96],  tag:'CORE · EXECUTION',         title:'ORDER',         val:'LONG NQ · LIMIT',       pts:['Risk 0.5% of the account','Size 1 contract']},
  {k:'end',     b:42}];
 SH.forEach((s,i)=>{s.t0=s.b*BEAT;s.t1=(i<SH.length-1?SH[i+1].b:48)*BEAT;});
 const FILL=38*BEAT,FIELDS=SH.slice(1,11);
@@ -103,14 +104,14 @@ function labelCard(si,lt){const s=SH[si];if(!s.title||s.k==='order')return;const
 function viewport(t){const si=shotAt(t),s=SH[si],lt=t-s.t0;x.save();rr(VX,VY,VW,VH,18);x.clip();
  const g=x.createLinearGradient(0,VY,0,VY+VH);g.addColorStop(0,'#00120D');g.addColorStop(1,'#032A20');x.fillStyle=g;x.fillRect(VX,VY,VW,VH);rain(t,VX,VY,VW,VH,22,30,.13);
  if(s.k==='end'){x.restore();return;}
- const cam=camAt(t);axes(cam);overlays(cam,t,si,lt);candles(cam,t,si>=11?193:undefined);overlays2(cam,t,si);bokeh(t,VX,VY,VW,VH);
+ const zz=(1+.12*eo(clamp(lt/(s.t1-s.t0),0,1)))*(1+.14*Math.exp(-lt*9));SCENE.render(x,VX,VY,s.k,t,lt,zz,FILL);
  if(si>=11)ticket(t);labelCard(si,lt);
  // chrome
  const vg=x.createRadialGradient(VX+VW/2,VY+VH/2,VH*.3,VX+VW/2,VY+VH/2,VW*.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.55)');x.fillStyle=vg;x.fillRect(VX,VY,VW,VH);x.restore();
  x.strokeStyle='rgba(31,219,138,.35)';x.lineWidth=1.5;rr(VX,VY,VW,VH,18);x.stroke();
  [[VX+14,VY+14,1,1],[VX+VW-14,VY+14,-1,1],[VX+14,VY+VH-14,1,-1],[VX+VW-14,VY+VH-14,-1,-1]].forEach(([px,py,a,b])=>{x.strokeStyle=GL;x.lineWidth=3;x.beginPath();x.moveTo(px,py+b*28);x.lineTo(px,py);x.lineTo(px+a*28,py);x.stroke();});
  const live=Math.floor(t*2)%2===0;x.fillStyle=live?RED:'rgba(255,90,106,.4)';x.beginPath();x.arc(VX+44,VY+38,6,0,TAU);x.fill();T(`LIVE · SHOT ${String(Math.min(si+1,12)).padStart(2,'0')}/12`,VX+58,VY+44,16,700,MONO,HEAD,'left',2);
- pill(VX+VW/2-x.measureText(s.tag).width/2-80,VY+20,s.tag,G);const zoom=236/cam.w;T('×'+(zoom<10?zoom.toFixed(1):Math.round(zoom)),VX+VW-30,VY+48,30,800,DISP,HEAD,'right',0,'rgba(31,219,138,.6)');T('ZOOM · 1M',VX+VW-30,VY+70,13,700,MONO,MUTE,'right',2);}
+ pill(VX+VW/2-x.measureText(s.tag).width/2-80,VY+20,s.tag,G);const MAG=[700,4200,2600,3800,15000,22000,8000,12000,18000,26000,9000,30000],zoom=Math.round(MAG[Math.min(si,11)]*(1+.12*eo(clamp(lt/(s.t1-s.t0),0,1))));T('×'+zoom.toLocaleString('en-US').replace(',',' '),VX+VW-30,VY+48,30,800,DISP,HEAD,'right',0,'rgba(31,219,138,.6)');T('MAGNIFICATION',VX+VW-30,VY+70,13,700,MONO,MUTE,'right',2);}
 function overlays2(cam,t,si){// entry marker after the fill
  if(t>=FILL){const [px,py]=W2S(cam,192,ENTRY);const e=clamp((t-FILL)*1.3,0,1);for(let r=0;r<3;r++){const k=clamp(e*1.4-r*.15,0,1);if(k>0&&k<1){x.strokeStyle=`rgba(124,255,196,${1-k})`;x.lineWidth=3;x.beginPath();x.arc(px,py,8+k*220,0,TAU);x.stroke();}}x.save();x.fillStyle=HEAD;x.shadowColor=G;x.shadowBlur=24;x.beginPath();x.arc(px,py,9,0,TAU);x.fill();x.restore();}}
 
@@ -126,9 +127,7 @@ const LOG=[['08:30','news','HIGH IMPACT'],['07:00','flow','BULLISH'],['09:00','d
 function panel(t){const si=shotAt(t),y0=950,h=330;x.fillStyle='rgba(0,16,11,.88)';rr(24,y0,1032,h,18);x.fill();x.strokeStyle='rgba(31,219,138,.3)';x.lineWidth=1.2;x.stroke();
  const col=[[44,250,'LOCATOR'],[310,300,'FIELDS'],[630,190,'EDGE · SIM.'],[840,200,'DATA STREAM']];col.forEach(([px,w,l])=>T(l,px,y0+34,13,700,MONO,MUTE,'left',2));
  // locator: full chart with camera rect
- {const lx=44,ly=y0+50,lw=240,lh=200,cam=camAt(Math.min(t,SH[12].t0-.01)),pmin=21445,pmax=21560,X=i=>lx+i/NC*lw,Y=p=>ly+lh-(p-pmin)/(pmax-pmin)*lh;x.strokeStyle='rgba(31,219,138,.18)';x.strokeRect(lx,ly,lw,lh);
-  x.strokeStyle=G;x.lineWidth=1.5;x.beginPath();C.forEach((k,i)=>i?x.lineTo(X(i),Y(k.c)):x.moveTo(X(i),Y(k.c)));x.stroke();x.setLineDash([3,3]);x.strokeStyle='rgba(124,255,196,.4)';[PDH,PDL].forEach(p=>{x.beginPath();x.moveTo(lx,Y(p));x.lineTo(lx+lw,Y(p));x.stroke();});x.setLineDash([]);
-  if(si<12){x.strokeStyle=HEAD;x.lineWidth=2;x.strokeRect(X(cam.cx-cam.w/2),Y(cam.cy+cam.h/2),cam.w/NC*lw,cam.h/(pmax-pmin)*lh);}T(SH[Math.min(si,11)].k.toUpperCase(),lx,ly+lh+26,14,700,MONO,G,'left',2);}
+ {const lx=44,ly=y0+50,lw=240,lh=200,k=SH[Math.min(si,11)].k;SCENE.locator(x,lx,ly,lw,lh,{news:'news',flow:'flow',dol:'dol',sweep:'sweep',poi:'poi',toi:'toi',smt:'smt',ote:'ote',inval:'inval',target:'target',order:'order'}[k],t);x.strokeStyle='rgba(31,219,138,.3)';x.strokeRect(lx,ly,lw,lh);T(k==='overview'?'REAR VIEW':SH[Math.min(si,11)].tag.split('· ')[1],lx,ly+lh+26,14,700,MONO,G,'left',2);}
  // fields checklist
  FIELDS.forEach((f,i)=>{const fy=y0+66+i*25,on=si===i+1,ok=t>=f.t0+.35;T(f.title.replace('DRAW ON LIQUIDITY','DOL').replace('LIQUIDITY SWEEP','LIQ SWEEP').replace('POINT OF INTEREST','POI').replace('TIME OF INTEREST','TOI').replace('ENTRY MODEL','ENTRY'),310,fy,14,700,MONO,on?HEAD:(ok?MUTE:DIM),'left',1);T(ok?f.val.replace('Previous Daily ','P.D. '):'—',575,fy,14,on?700:400,MONO,on?GL:(ok?MUTE:DIM),'right');T(ok?'✓':'·',598,fy,15,700,MONO,ok?G:DIM,'right');});
  // edge (simulated stats)
