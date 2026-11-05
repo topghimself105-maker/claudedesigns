@@ -75,7 +75,7 @@ Simulated data. Not financial advice.
 A trade isn't one decision.
 It's 10.
 
-News ✓ Orderflow ✓ DOL ✓ Sweep ✓ POI ✓
+News ✓ Orderflow ✓ DOL ✓ POI ✓ Sweep ✓
 TOI ✓ SMT ✓ Entry ✓ Invalidation ✓ Target ✓
 
 10/10 → order filled.

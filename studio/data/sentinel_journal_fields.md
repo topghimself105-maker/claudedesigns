@@ -1,6 +1,6 @@
 # The Sentinel: journal fields (owner's own list)
 
-These are the fields the owner logs for every trade. Videos may only show these options; never add new ones.
+These are the fields the owner logs for every trade, in the owner's order (videos follow this order). Videos may only show these options; never add new ones.
 Open questions are marked (?) and must be answered by the owner before they are used in a video.
 
 | Field | Options |

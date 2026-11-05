@@ -37,8 +37,8 @@ const SH=[
  {k:'news',    b:5, cam:[92,21508,62,62],   tag:'CLOSE-UP · PULSE CORE',   title:'NEWS',          val:'High Impact',           pts:['08:30 release on the calendar','Volatility is the opportunity']},
  {k:'flow',    b:10, cam:[120,21500,170,110],tag:'CLOSE-UP · CURRENT',title:'ORDERFLOW',   val:'Bullish',               pts:['Higher timeframe pushing up','Buyers in control']},
  {k:'dol',     b:15,cam:[165,21527,120,96], tag:'CLOSE-UP · LIQUIDITY POOL',    title:'DRAW ON LIQUIDITY',val:'Previous Daily High', pts:['Buy-side liquidity above','Price is drawn to '+fmt(PDH)]},
- {k:'sweep',   b:20,cam:[172,21461,22,20],  tag:'CLOSE-UP · MEMBRANE',title:'LIQUIDITY SWEEP',val:'Previous Daily Low',  pts:['PDL '+fmt(PDL)+' taken at 09:52','Low printed at '+fmt(SWL)]},
- {k:'poi',     b:25,cam:[176,21483,12,30],  tag:'CLOSE-UP · IMBALANCE',    title:'POINT OF INTEREST',val:'BISI',               pts:['Buy-side imbalance, sell-side inefficiency','Gap '+fmt(BISI[0])+' – '+fmt(BISI[1])]},
+ {k:'poi',     b:20,cam:[176,21483,12,30],  tag:'CLOSE-UP · IMBALANCE',    title:'POINT OF INTEREST',val:'BISI',               pts:['Buy-side imbalance, sell-side inefficiency','Gap '+fmt(BISI[0])+' – '+fmt(BISI[1])]},
+ {k:'sweep',   b:25,cam:[172,21461,22,20],  tag:'CLOSE-UP · MEMBRANE',title:'LIQUIDITY SWEEP',val:'Previous Daily Low',  pts:['PDL '+fmt(PDL)+' taken at 09:52','Low printed at '+fmt(SWL)]},
  {k:'toi',     b:30,cam:[178,21490,64,84],  tag:'CLOSE-UP · TIME RING',    title:'TIME OF INTEREST',val:'09:45 – 10:15',        pts:['Sweep and entry inside the window']},
  {k:'smt',     b:35,cam:[160,21485,52,64],  tag:'CLOSE-UP · TWIN CORES',    title:'SMT',           val:'90-Minute',             pts:['NQ makes a lower low','ES holds a higher low']},
  {k:'ote',     b:40,cam:[184,21488,30,72],  tag:'CLOSE-UP · OTE LENS',  title:'ENTRY MODEL',   val:'OTE',                   pts:['62 – 79% of the displacement leg','Limit '+fmt(ENTRY)+', inside the BISI']},
@@ -129,7 +129,7 @@ function hud(t){const si=shotAt(t),done=FIELDS.filter((f,i)=>t>=f.t0+.35).length
  for(let i=0;i<10;i++){x.fillStyle=i<done?G:'rgba(31,219,138,.14)';x.fillRect(rx+i*25,190,19,10);}}
 
 // ---------- bottom panel ----------
-const LOG=[['08:30','news','HIGH IMPACT'],['07:00','flow','BULLISH'],['09:00','dol','PDH '+fmt(PDH)],['09:52','sweep','PDL TAKEN'],['09:56','poi','BISI'],['09:45','toi','09:45-10:15'],['09:52','smt','NQ LL / ES HL'],['10:12','entry','OTE '+fmt(ENTRY)],['--:--','stop','SWING LOW'],['--:--','target','PDH 2.9R']];
+const LOG=[['08:30','news','HIGH IMPACT'],['07:00','flow','BULLISH'],['09:00','dol','PDH '+fmt(PDH)],['09:56','poi','BISI'],['09:52','sweep','PDL TAKEN'],['09:45','toi','09:45-10:15'],['09:52','smt','NQ LL / ES HL'],['10:12','entry','OTE '+fmt(ENTRY)],['--:--','stop','SWING LOW'],['--:--','target','PDH 2.9R']];
 function panel(t){const si=shotAt(t),y0=950,h=330;x.fillStyle='rgba(0,16,11,.88)';rr(24,y0,1032,h,18);x.fill();x.strokeStyle='rgba(31,219,138,.3)';x.lineWidth=1.2;x.stroke();
  const col=[[44,250,'LOCATOR'],[310,300,'FIELDS'],[630,190,'EDGE · SIM.'],[840,200,'DATA STREAM']];col.forEach(([px,w,l])=>T(l,px,y0+34,13,700,MONO,MUTE,'left',2));
  // locator: full chart with camera rect
