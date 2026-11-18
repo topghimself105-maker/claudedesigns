@@ -27,3 +27,8 @@ voordat je de .pptx opent, anders vervangt PowerPoint het door een standaardlett
 
 ## Nog invullen
 Dia 1: `[Naam student]` en `[Studentnummer]`.
+
+## Korte versie (±10 minuten), november 2026
+`TMU_Mijn_Stage_10min.pptx` / `.pdf`, gebouwd met `build_kort.py`. 8 dia's, alleen over de eigen stage:
+cover, TMU in één minuut, wat ik doe, mijn rol in de klantreis, de werkomgeving, de cultuur, wat ik meeneem, afsluiting.
+Elke dia heeft sprekersnotities met een tijdsindicatie. De lange versie (stagegids voor toekomstige stagiairs) blijft bestaan.
